@@ -1,0 +1,22 @@
+node_modules/
+dist/
+.wrangler/
+.dev.vars*
+.env*
+!.env.example
+.DS_Store
+*.log
+*.webarchive
+build-report.json
+# Preserved legacy material: kept locally, never deployed or published.
+/home.html
+/images.json
+/gallery/
+/out/
+# Private backups, reviewer output, and incidental tooling.
+/evidence/
+/backups/
+/.claude/
+/.codex/
+/playwright-report/
+/test-results/
