@@ -11,4 +11,5 @@ Decisions made by Andrew (site owner). Follow them; change only with his explici
 - **Water Lily is provisional:** title “Water Lily” and medium “watercolor” are placeholders; Andrew will confirm them with the family.
 - **Email shown site-wide:** Lorna’s email (`content/artist.json`) appears in the footer and About contact.
 - **www redirects to apex:** handled by `worker/index.mjs` (301 to `https://lornabenson.com`), not a dashboard rule.
+- **HSTS:** `Strict-Transport-Security: max-age=31536000` is set once, on `/*` in `src/_headers` (never repeat it in another rule; duplicates are comma-joined). No `includeSubDomains`, no preload, deliberately. Cloudflare dashboard HSTS stays off. The zone’s Always Use HTTPS must stay on, because HSTS cannot protect a first visit over plain HTTP.
 - **Public repo:** `drewster99/lorna-benson-website` is public (`__PUBLIC_REPO`).

@@ -60,7 +60,8 @@ export function trueAspectRatio(corners, sourceWidth, sourceHeight) {
  * @returns {Promise<import('sharp').Sharp>} Pipeline holding the rectified artwork.
  */
 export async function rectifyArtwork(sourcePath, corners) {
-  const {data, info} = await sharp(sourcePath).removeAlpha().raw().toBuffer({resolveWithObject: true});
+  // Raw pixels carry no colour profile, so convert to sRGB first; derivatives are tagged as sRGB.
+  const {data, info} = await sharp(sourcePath).toColourspace('srgb').removeAlpha().raw().toBuffer({resolveWithObject: true});
   const {width: sourceWidth, height: sourceHeight, channels} = info;
   for (const [x, y] of corners) {
     if (!(x >= 0 && y >= 0 && x <= sourceWidth - 1 && y <= sourceHeight - 1)) throw Error(`Artwork corner outside photograph: ${sourcePath}`);

@@ -103,7 +103,7 @@ async function page(route,title,description,body,active='',noindex=false){
   const dest=route==='/404.html'?out+route:out+route+'index.html';await fs.mkdir(path.dirname(dest),{recursive:true});await fs.writeFile(dest,html);if(!noindex)routes.push(route);
 }
 
-const salon=[['tree-huggers','happy-dance','hide-and-seek'],['little-blondie','best-friends']];
+const heroSelection=[['tree-huggers','happy-dance','hide-and-seek'],['little-blondie','best-friends']];
 const featured=bySlug('look-what-i-caught');
 const mediumCovers={'colored pencil':bySlug('christmas-pjs'),'chalk pastel':bySlug('brothers'),'graphite':bySlug('packer-fan'),'watercolor':bySlug('water-lily')};
 const mediumNotes={
@@ -112,8 +112,9 @@ const mediumNotes={
   'graphite':'Every shade of gray, from a woodland backdrop to the stitching on a football jersey.',
   'watercolor':'Loose, luminous washes: a water lily glowing above its pads.',
 };
+for (const m of media) if (!mediumCovers[m] || !mediumNotes[m]?.trim()) throw Error('Medium needs a cover and a note: '+m);
 const homeSelection=[['blowing-out-candles','brothers','first-attempt'],['christmas-pjs','little-em','not-out'],['big-brother','gracie-with-smore','attitude']];
-const portraitSizes='(max-width: 799px) min(calc(100vw - 40px), 420px), 360px';
+const portraitSizes='(max-width: 599px) min(calc(100vw - 54px), 286px), (max-width: 899px) 360px, (max-width: 1099px) 280px, 340px';
 
 await page('/','Portraits of everyday wonder',`Children’s portraits and more in ${mediaInWords} by Gladstone, Michigan artist Lorna Benson.`,`
 <section class="hero wrap">
@@ -123,11 +124,11 @@ await page('/','Portraits of everyday wonder',`Children’s portraits and more i
     <p class="intro">A birthday wish blown at full force. A frog in each hand. Best friends, shoulder to shoulder. Children’s portraits by Lorna Benson, in colored pencil, chalk pastel and graphite.</p>
     <div class="hero-actions"><a class="button" href="/gallery/">Explore the collection ${arrow}</a><a class="text-link" href="/about/">Meet the artist</a></div>
   </div>
-  <div class="salon">${hang(salon,{eager:5,captions:false,label:'Selected portraits'})}</div>
+  ${hang(heroSelection,{eager:5,captions:false,label:'Selected portraits'})}
 </section>
 <section class="feature" aria-labelledby="feature-title">
   <div class="wrap feature-inner">
-    <a class="feature-art" href="/work/${featured.slug}/"><span class="mat">${picture(featured,'(max-width: 799px) calc(100vw - 40px), 54vw')}</span></a>
+    <a class="feature-art" href="/work/${featured.slug}/"><span class="mat">${picture(featured,'(max-width: 899px) calc(100vw - 56px), min(54vw, 730px)',{alt:featured.title})}</span></a>
     <div class="feature-copy">
       <p class="eyebrow">Featured work</p>
       <h2 id="feature-title">${esc(featured.title)}</h2>
@@ -139,7 +140,7 @@ await page('/','Portraits of everyday wonder',`Children’s portraits and more i
 </section>
 <section class="section wrap" aria-labelledby="media-title">
   <div class="section-heading"><div><p class="eyebrow">Ways of seeing</p><h2 id="media-title">One artist, <em>${numberWords[media.length]} media.</em></h2></div></div>
-  <ul class="media-grid">${media.map(m=>{const cover=mediumCovers[m];const n=works.filter(w=>w.medium===m).length;return `<li><a class="medium-card" href="/gallery/${mediumSlug(m)}/"><span class="medium-image">${picture(cover,'(max-width: 799px) calc(100vw - 40px), 30vw',{alt:''})}</span><span class="medium-copy"><span class="medium-name">${esc(capitalize(m))}</span><span class="medium-count">${count(n,'work')}</span><span class="medium-note">${esc(mediumNotes[m])}</span></span></a></li>`;}).join('')}</ul>
+  <ul class="media-grid">${media.map(m=>{const cover=mediumCovers[m];const n=works.filter(w=>w.medium===m).length;return `<li><a class="medium-card" href="/gallery/${mediumSlug(m)}/"><span class="medium-image">${picture(cover,'(max-width: 599px) calc(100vw - 40px), (max-width: 1099px) 46vw, 22vw',{alt:''})}</span><span class="medium-copy"><span class="medium-name">${esc(capitalize(m))}</span><span class="medium-count">${count(n,'work')}</span><span class="medium-note">${esc(mediumNotes[m])}</span></span></a></li>`;}).join('')}</ul>
 </section>
 <section class="section wrap collection-preview" aria-labelledby="selected">
   <div class="section-heading"><div><p class="eyebrow">From the collection</p><h2 id="selected">Small moments, <em>fully seen.</em></h2></div><a class="text-link" href="/gallery/">View all ${works.length} works ${arrow}</a></div>
@@ -201,7 +202,7 @@ for(let i=0;i<works.length;i++){
 const sourceURL='https://www.dailypress.net/news/local-news/2019/09/play-mural-unveiled-in-gladstone/';
 await page('/about/','About the artist','Meet Gladstone, Michigan artist Lorna Benson, whose children’s portraits celebrate friendship, family and everyday life.',`
 <section class="about-hero wrap">
-  <div class="portrait-frame large">${picture(portrait,'(max-width: 799px) min(calc(100vw - 40px), 460px), 440px',{loading:'eager',priority:'high'})}</div>
+  <div class="portrait-frame">${picture(portrait,'(max-width: 599px) min(calc(100vw - 54px), 286px), (max-width: 899px) 360px, (max-width: 1099px) 340px, 420px',{loading:'eager',priority:'high'})}</div>
   <div class="about-intro">
     <p class="eyebrow">About the artist</p>
     <h1>A sense of place.<br><em>An eye for people.</em></h1>
@@ -217,7 +218,7 @@ await page('/about/','About the artist','Meet Gladstone, Michigan artist Lorna B
     <p>In <a href="/gallery/colored-pencil/">colored pencil</a>, she works in fine detail: the pattern of a flowered dress, the speckled blue behind a tousled head of curls, the mortar lines of a brick hearth at Christmas. Her <a href="/gallery/chalk-pastel/">chalk pastels</a> are softer and warmer, full of sunlit shorelines, woodland greens and warm embraces. In <a href="/gallery/graphite/">graphite</a>, she builds a whole woodland in shades of gray. And in <a href="/gallery/watercolor/">watercolor</a>, loose washes bloom into a water lily glowing above its pads.</p>
     <p>Look closely and you’ll often find her initials, LKB, tucked into a corner.</p>
   </div>
-  <aside class="about-aside" aria-label="Collection at a glance">
+  <aside aria-label="Collection at a glance">
     <dl class="facts">
       <div><dt>Home</dt><dd>Gladstone, Michigan</dd></div>
       <div><dt>On this site</dt><dd>${works.length} works</dd></div>
