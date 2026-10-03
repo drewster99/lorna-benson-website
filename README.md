@@ -27,7 +27,7 @@ The build produces home, all-works gallery, three medium galleries, About/contac
 
 ## Cloudflare — connect after GitHub push
 
-This repository is ready to rebuild on each push. **Hosting is not provisioned by the rebuild task.** Drew will connect GitHub and domain in Cloudflare.
+The Worker `lorna-benson-website` is deployed and serves `lornabenson.com` and `www.lornabenson.com` as custom domains declared in `wrangler.jsonc`. The workers.dev URL and preview URLs are disabled. The DNS zone holds no other records: the old cPanel/Namecheap web and mail records were removed on 2026-10-02.
 
 ### Recommended: Workers Builds + static assets
 
@@ -36,7 +36,7 @@ This repository is ready to rebuild on each push. **Hosting is not provisioned b
 3. Build command: `npm ci --ignore-scripts && npm run build`.
 4. Deploy command: `npx wrangler deploy` (Wrangler is pinned in devDependencies; install devDependencies during build).
 5. `wrangler.jsonc` names `lorna-benson-website`, serves `./dist` assets with trailing-slash HTML handling and real 404 handling. No worker JavaScript or secrets are required. Connect the build trigger for pushes to main.
-6. After a successful preview deployment, add `lornabenson.com` as the Worker’s custom domain and configure any www redirect in Cloudflare. The canonical URLs already use `https://lornabenson.com`.
+6. Custom domains come from `routes` in `wrangler.jsonc`; `wrangler deploy` creates their DNS records. The canonical URLs use `https://lornabenson.com`.
 
 Local configuration validation without deployment/authentication:
 
