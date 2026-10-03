@@ -14,7 +14,10 @@ const hash = b => crypto.createHash('sha256').update(b).digest('hex');
 const capitalize = s => s[0].toUpperCase()+s.slice(1);
 const works = JSON.parse(await fs.readFile('content/works.json','utf8'));
 const artist = JSON.parse(await fs.readFile('content/artist.json','utf8'));
-const media = ['colored pencil','chalk pastel','graphite'];
+const media = ['colored pencil','chalk pastel','graphite','watercolor'];
+const listInWords = items => items.length<2?items.join(''):`${items.slice(0,-1).join(', ')} and ${items.at(-1)}`;
+const mediaInWords = listInWords(media);
+const numberWords = ['zero','one','two','three','four','five','six','seven','eight','nine'];
 const mediumSlug = s => s.replaceAll(' ','-');
 const pipelineHash = hash(JSON.stringify({versions: sharp.versions, widths: [360,640,960,1280,'native'], webpQuality:82, jpegQuality:85, colourspace:'srgb', perspective:2, pipelineVersion:2})).slice(0,8);
 const isPoint = p => Array.isArray(p) && p.length===2 && p.every(Number.isFinite);
@@ -35,6 +38,8 @@ for (const w of works) {
   w.photo = await verifiedOriginal(w.source, w.sha256, w.slug);
 }
 if (!artist.portrait?.alt?.trim()) throw Error('Artist portrait needs alternative text');
+if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(artist.email ?? '')) throw Error('Artist needs a contact email');
+if (!numberWords[media.length]) throw Error('Add a number word for '+media.length+' media');
 const portraitPhoto = await verifiedOriginal(artist.portrait.source, artist.portrait.sha256, 'artist portrait');
 const {crop} = artist.portrait;
 if (crop.left<0 || crop.top<0 || crop.left+crop.width>portraitPhoto.width || crop.top+crop.height>portraitPhoto.height) throw Error('Artist portrait crop is outside the photograph');
@@ -91,7 +96,7 @@ function hang(rows,{eager=0,captions=true,rowHeight=220,label='Artworks'}={}){
 }
 
 const nav=(active,route)=>`<a class="skip" href="#main">Skip to content</a><header class="header wrap"><a class="wordmark" href="/">Lorna Benson<span>Artist · Gladstone, Michigan</span></a><nav aria-label="Main navigation"><a href="/gallery/" ${active==='gallery'?`aria-current="${route==='/gallery/'?'page':'true'}"`:''}>The work</a><a href="/about/" ${active==='about'?'aria-current="page"':''}>About the artist</a><a href="/about/#contact">Contact</a></nav></header>`;
-const footer=`<footer class="footer"><div class="wrap footer-inner"><div><a class="footer-name" href="/">Lorna Benson</a><p>Portraits. People. The moments between.</p></div><div><a href="/gallery/">Explore the collection ${arrow}</a><p>© Lorna Benson. All artwork rights reserved.</p></div></div></footer>`;
+const footer=`<footer class="footer"><div class="wrap footer-inner"><div><a class="footer-name" href="/">Lorna Benson</a><p>Portraits. People. The moments between.</p><a class="footer-email" href="mailto:${esc(artist.email)}">${esc(artist.email)}</a></div><div><a href="/gallery/">Explore the collection ${arrow}</a><p>© Lorna Benson. All artwork rights reserved.</p></div></div></footer>`;
 const routes=[];
 async function page(route,title,description,body,active='',noindex=false){
   const html=`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(title)} | Lorna Benson</title><meta name="description" content="${esc(description)}"><meta name="theme-color" content="#f6f1e7">${noindex?'<meta name="robots" content="noindex">':`<link rel="canonical" href="${origin}${route}">`}<meta property="og:title" content="${esc(title)} | Lorna Benson"><meta property="og:description" content="${esc(description)}"><meta property="og:type" content="website"><meta property="og:url" content="${origin}${route}"><meta property="og:image" content="${origin}/social.png"><meta property="og:image:alt" content="Lorna Benson — Artist, Gladstone, Michigan"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="${cssPath}"></head><body>${nav(active,route)}<main id="main">${body}</main>${footer}</body></html>`;
@@ -100,16 +105,17 @@ async function page(route,title,description,body,active='',noindex=false){
 
 const salon=[['tree-huggers','happy-dance','hide-and-seek'],['little-blondie','best-friends']];
 const featured=bySlug('look-what-i-caught');
-const mediumCovers={'colored pencil':bySlug('christmas-pjs'),'chalk pastel':bySlug('brothers'),'graphite':bySlug('packer-fan')};
+const mediumCovers={'colored pencil':bySlug('christmas-pjs'),'chalk pastel':bySlug('brothers'),'graphite':bySlug('packer-fan'),'watercolor':bySlug('water-lily')};
 const mediumNotes={
   'colored pencil':'Patient layers of color: tousled curls, flowered dresses, a brick hearth at Christmas.',
   'chalk pastel':'Soft, luminous color for sunlit shorelines, woodland days and warm embraces.',
   'graphite':'Every shade of gray, from a woodland backdrop to the stitching on a football jersey.',
+  'watercolor':'Loose, luminous washes: a water lily glowing above its pads.',
 };
 const homeSelection=[['blowing-out-candles','brothers','first-attempt'],['christmas-pjs','little-em','not-out'],['big-brother','gracie-with-smore','attitude']];
 const portraitSizes='(max-width: 799px) min(calc(100vw - 40px), 420px), 360px';
 
-await page('/','Portraits of everyday wonder','Children’s portraits in colored pencil, chalk pastel and graphite by Gladstone, Michigan artist Lorna Benson.',`
+await page('/','Portraits of everyday wonder',`Children’s portraits and more in ${mediaInWords} by Gladstone, Michigan artist Lorna Benson.`,`
 <section class="hero wrap">
   <div class="hero-copy">
     <p class="eyebrow">Kids’ Portraits · Michigan’s Upper Peninsula</p>
@@ -132,7 +138,7 @@ await page('/','Portraits of everyday wonder','Children’s portraits in colored
   </div>
 </section>
 <section class="section wrap" aria-labelledby="media-title">
-  <div class="section-heading"><div><p class="eyebrow">Three ways of seeing</p><h2 id="media-title">One childhood, <em>three media.</em></h2></div></div>
+  <div class="section-heading"><div><p class="eyebrow">Ways of seeing</p><h2 id="media-title">One artist, <em>${numberWords[media.length]} media.</em></h2></div></div>
   <ul class="media-grid">${media.map(m=>{const cover=mediumCovers[m];const n=works.filter(w=>w.medium===m).length;return `<li><a class="medium-card" href="/gallery/${mediumSlug(m)}/"><span class="medium-image">${picture(cover,'(max-width: 799px) calc(100vw - 40px), 30vw',{alt:''})}</span><span class="medium-copy"><span class="medium-name">${esc(capitalize(m))}</span><span class="medium-count">${count(n,'work')}</span><span class="medium-note">${esc(mediumNotes[m])}</span></span></a></li>`;}).join('')}</ul>
 </section>
 <section class="section wrap collection-preview" aria-labelledby="selected">
@@ -154,11 +160,11 @@ await page('/','Portraits of everyday wonder','Children’s portraits in colored
 for (const medium of [null,...media]) {
   const list=medium?works.filter(w=>w.medium===medium):works;const route=medium?`/gallery/${mediumSlug(medium)}/`:'/gallery/';
   const filters=[['All works',works.length,'/gallery/'],...media.map(m=>[capitalize(m),works.filter(w=>w.medium===m).length,`/gallery/${mediumSlug(m)}/`])];
-  await page(route,medium?`${capitalize(medium)} portraits`:'The work',`Explore ${count(list.length,medium?`${medium} portrait`:'children’s portrait')} by Lorna Benson. View each artwork in detail.`,`
+  await page(route,medium?`${capitalize(medium)} works`:'The work',`Explore ${count(list.length,`${medium??'original'} work`)} by Lorna Benson. View each artwork in detail.`,`
 <section class="page-intro wrap">
-  <p class="eyebrow">The collection · Kids’ Portraits</p>
-  <h1>${medium?`${esc(capitalize(medium))}<em> portraits.</em>`:'The joy of <em>being little.</em>'}</h1>
-  <p class="intro">${medium?`${count(list.length,'portrait')} in ${esc(medium)}, from the Kids’ Portraits collection.`:`A birthday wish, a shared adventure, a quiet smile. ${works.length} portraits of childhood in colored pencil, chalk pastel and graphite.`}</p>
+  <p class="eyebrow">The collection</p>
+  <h1>${medium?`In <em>${esc(medium)}.</em>`:'The joy of <em>being little.</em>'}</h1>
+  <p class="intro">${medium?`${count(list.length,'work')} in ${esc(medium)} by Lorna Benson.`:`A birthday wish, a shared adventure, a quiet smile. ${works.length} works in ${mediaInWords}, most of them portraits of childhood.`}</p>
 </section>
 <section class="gallery-section wrap" aria-label="Artwork gallery">
   <nav class="filters" aria-label="Browse by medium">${filters.map(([label,n,url])=>`<a href="${url}" ${url===route?'aria-current="page"':''}>${label} <span>${n}</span></a>`).join('')}</nav>
@@ -172,13 +178,13 @@ const detailSizes=w=>{const r=w.width/w.height;return `(max-width: 799px) calc(1
 for(let i=0;i<works.length;i++){
   const w=works[i],previous=works[(i+works.length-1)%works.length],next=works[(i+1)%works.length];
   const neighbor=(x,label)=>`<a href="/work/${x.slug}/"><span class="neighbor-thumb">${picture(x,'96px',{alt:''})}</span><span class="neighbor-text"><span>${label}</span>${esc(x.title)}</span></a>`;
-  await page(`/work/${w.slug}/`,w.title,`${w.title}, a ${w.medium} portrait by Lorna Benson. ${w.alt}`,`
+  await page(`/work/${w.slug}/`,w.title,`${w.title}, a ${w.medium} work by Lorna Benson. ${w.alt}`,`
 <section class="detail">
   <div class="wrap"><a class="back-link" href="/gallery/">← Back to the collection</a></div>
   <div class="detail-wall"><figure class="detail-art ar-${w.slug}"><span class="mat">${picture(w,detailSizes(w),{loading:'eager',priority:'high'})}</span></figure></div>
   <div class="wrap detail-body">
     <div class="detail-heading">
-      <p class="eyebrow">Kids’ Portraits · ${String(i+1).padStart(2,'0')} of ${works.length}</p>
+      <p class="eyebrow">The collection · ${String(i+1).padStart(2,'0')} of ${works.length}</p>
       <h1>${esc(w.title)}</h1>
       <p class="detail-meta">${esc(capitalize(w.medium))} · Lorna Benson</p>
       <p class="detail-description">${esc(w.alt)}</p>
@@ -207,14 +213,14 @@ await page('/about/','About the artist','Meet Gladstone, Michigan artist Lorna B
     <h2>Childhood, as it happens.</h2>
     <p>Lorna’s Kids’ Portraits are about the moments families hold onto: a birthday wish blown at full force, a proud boy holding up a frog in each hand, three best friends standing shoulder to shoulder, a little Packers fan at the foot of a tree, and a slide into home plate that’s much too close to call.</p>
     <p>Her children aren’t stiff studio sitters. They grin into the sun, hug, giggle, slide and dance, and she draws them that way, with the patience to get every curl, freckle and grin right.</p>
-    <h2>Three ways of seeing.</h2>
-    <p>In <a href="/gallery/colored-pencil/">colored pencil</a>, she works in fine detail: the pattern of a flowered dress, the speckled blue behind a tousled head of curls, the mortar lines of a brick hearth at Christmas. Her <a href="/gallery/chalk-pastel/">chalk pastels</a> are softer and warmer, full of sunlit shorelines, woodland greens and warm embraces. In <a href="/gallery/graphite/">graphite</a>, she builds a whole woodland in shades of gray.</p>
+    <h2>Ways of seeing.</h2>
+    <p>In <a href="/gallery/colored-pencil/">colored pencil</a>, she works in fine detail: the pattern of a flowered dress, the speckled blue behind a tousled head of curls, the mortar lines of a brick hearth at Christmas. Her <a href="/gallery/chalk-pastel/">chalk pastels</a> are softer and warmer, full of sunlit shorelines, woodland greens and warm embraces. In <a href="/gallery/graphite/">graphite</a>, she builds a whole woodland in shades of gray. And in <a href="/gallery/watercolor/">watercolor</a>, loose washes bloom into a water lily glowing above its pads.</p>
     <p>Look closely and you’ll often find her initials, LKB, tucked into a corner.</p>
   </div>
   <aside class="about-aside" aria-label="Collection at a glance">
     <dl class="facts">
       <div><dt>Home</dt><dd>Gladstone, Michigan</dd></div>
-      <div><dt>Collection</dt><dd>Kids’ Portraits · ${works.length} works</dd></div>
+      <div><dt>On this site</dt><dd>${works.length} works</dd></div>
       <div><dt>Media</dt><dd>${media.map(m=>`${capitalize(m)} (${works.filter(w=>w.medium===m).length})`).join('<br>')}</dd></div>
     </dl>
   </aside>
@@ -225,7 +231,7 @@ await page('/about/','About the artist','Meet Gladstone, Michigan artist Lorna B
     <h2>A connection to community.</h2>
     <p>In September 2019, the <cite>Daily Press</cite> reported that Lorna Benson spoke at the unveiling of Gladstone’s “Play” mural, thanking the organizations, businesses and residents who supported the project and its artists.</p>
     <p class="source-note">Community story: <a href="${sourceURL}">“‘Play’ mural unveiled in Gladstone,” <cite>Daily Press</cite>, September 7, 2019 ${arrow}</a>. The mural is a community project; it is not presented here as Lorna’s artwork.</p>
-    <section class="contact" id="contact" aria-labelledby="contact-title"><p class="eyebrow">Say hello</p><h2 id="contact-title">Let’s talk about art.</h2><p>For questions about the work, get in touch by email.</p><a class="button" href="mailto:klbenson2261@charter.net">Email Lorna ${arrow}</a><p class="contact-address">klbenson2261@charter.net</p></section>
+    <section class="contact" id="contact" aria-labelledby="contact-title"><p class="eyebrow">Say hello</p><h2 id="contact-title">Let’s talk about art.</h2><p>For questions about the work, get in touch by email.</p><a class="button" href="mailto:${esc(artist.email)}">Email Lorna ${arrow}</a><p class="contact-address">${esc(artist.email)}</p></section>
   </div>
 </section>`,'about');
 

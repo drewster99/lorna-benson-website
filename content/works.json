@@ -158,5 +158,15 @@
     "alt": "Two children in pajamas by a brick fireplace: a boy in a Batman costume and paper crown stands while a girl lounges beside him.",
     "legacySource": "out/gallery_gen/ba771e2fbf8c28b29688c9c56b02ba6d.jpeg",
     "artCorners": [[220, 143], [1138, 122], [1200, 902], [222, 950]]
+  },
+  {
+    "slug": "water-lily",
+    "title": "Water Lily",
+    "medium": "watercolor",
+    "source": "artwork/water-lily.jpeg",
+    "sha256": "0f3d3ad97f510d430b059e100230fc1fa10f120a5e40c37b820d3510811da03d",
+    "alt": "A yellow and orange water lily rising above blue and gold lily pads on dark green water.",
+    "legacySource": "gallery/IMG_3099-ts1644190161.jpeg",
+    "artCorners": [[222, 257], [620, 263], [566, 742], [233, 800]]
   }
 ]

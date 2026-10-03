@@ -1,6 +1,6 @@
 # Lorna Benson — artist portfolio
 
-A warm, accessible, art-first static website for Lorna Benson in Gladstone, Michigan. No runtime JavaScript, tracking, third-party fonts or framework. The 16 works and their titles/media are retained from the artist’s original **Kids’ Portraits** website.
+A warm, accessible, art-first static website for Lorna Benson in Gladstone, Michigan. No client-side JavaScript, tracking, third-party fonts or framework. Sixteen works and their titles/media are retained from the artist’s original **Kids’ Portraits** website. The seventeenth, **Water Lily** (watercolor), came from an unpublished upload on the old site; its title and medium are placeholders pending confirmation from the family.
 
 ## Develop and build
 
@@ -37,7 +37,7 @@ The Worker `lorna-benson-website` is deployed and serves `lornabenson.com` and `
 2. Root directory: repository root. Node version: **22** (set `NODE_VERSION=22` if needed).
 3. Build command: `npm ci --ignore-scripts && npm run build`.
 4. Deploy command: `npx wrangler deploy` (Wrangler is pinned in devDependencies; install devDependencies during build).
-5. `wrangler.jsonc` names `lorna-benson-website`, serves `./dist` assets with trailing-slash HTML handling and real 404 handling. No worker JavaScript or secrets are required. Connect the build trigger for pushes to main.
+5. `wrangler.jsonc` names `lorna-benson-website`, serves `./dist` assets with trailing-slash HTML handling and real 404 handling. `worker/index.mjs` runs first on every request only to 301-redirect `www.lornabenson.com` to `https://lornabenson.com` (asset routing cannot match on host); everything else goes to the `ASSETS` binding, which still applies `_headers`. No secrets are required. Connect the build trigger for pushes to main.
 6. Custom domains come from `routes` in `wrangler.jsonc`; `wrangler deploy` creates their DNS records. The canonical URLs use `https://lornabenson.com`.
 
 Local configuration validation without deployment/authentication:
@@ -58,9 +58,9 @@ The old site had **no About the Artist** section. Hometown and residence of more
 
 - Clarissa Kell, Daily Press, September 7, 2019: [“‘Play’ mural unveiled in Gladstone”](https://www.dailypress.net/news/local-news/2019/09/play-mural-unveiled-in-gladstone/). Reports Lorna speaking at the unveiling and thanking community supporters. It does **not** establish that she created the mural; no such claim is made.
 
-No verifiable additional awards, training or exhibition history was found in the regional search. Portrait subjects are not newly identified beyond legacy titles. The old public artist email is reused; street addresses, phone, private biography and people-finder data are not published. A name-only sharing preview avoids amplifying a child’s portrait. Contact availability should be reviewed by Lorna if the old email changes.
+No verifiable additional awards, training or exhibition history was found in the regional search. Portrait subjects are not newly identified beyond legacy titles. The old public artist email (`content/artist.json`) is shown in the site footer and the About contact section; street addresses, phone, private biography and people-finder data are not published. A name-only sharing preview avoids amplifying a child’s portrait. Contact availability should be reviewed by Lorna if the old email changes.
 
-Preserved legacy `home.html`, `images.json`, `Home.webarchive`, `gallery/` and `out/` remain local and ignored. Audit, backups, CLI reviews and browser-test evidence are retained outside the repository in AgentSmith task evidence, never deployed. The artist photograph (`gallery/DSC_0030…`) was confirmed by family as Lorna and is published on Home and About. The uncaptioned watercolor flower (`gallery/IMG_3099…`) and unrelated template assets were not published. The 2016–2019 lornabenson.com (“Medieval Romances”) is not confirmed to be the same person and is not referenced.
+Preserved legacy `home.html`, `images.json`, `Home.webarchive`, `gallery/` and `out/` remain local and ignored. Audit, backups, CLI reviews and browser-test evidence are retained outside the repository in AgentSmith task evidence, never deployed. The artist photograph (`gallery/DSC_0030…`) was confirmed by family as Lorna and is published on Home and About. The uncaptioned watercolor (`gallery/IMG_3099…`) is published as “Water Lily” with a placeholder title and guessed medium (owner-approved). Unrelated template assets were not published. The 2016–2019 lornabenson.com (“Medieval Romances”) is not confirmed to be the same person and is not referenced.
 
 ## Quality checks
 

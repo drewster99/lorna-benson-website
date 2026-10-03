@@ -8,4 +8,7 @@ Decisions made by Andrew (site owner). Follow them; change only with his explici
 - **Artist photo:** `photos/lorna-benson.jpeg` is Lorna (confirmed). Use it on Home and About.
 - **Biography uses known facts only:** Gladstone, Michigan, 50+ years; the 2019 Daily Press “Play” mural story; and what is visible in the works. Do not invent training, awards, quotes or history. The 2016–2019 “Medieval Romances” lornabenson.com is not confirmed to be her; do not reference it.
 - **Removed copy:** the About-page note “The artist’s hometown and length of residence were provided by her family. Artwork titles and media are retained from her original website.” must not return.
+- **Water Lily is provisional:** title “Water Lily” and medium “watercolor” are placeholders; Andrew will confirm them with the family.
+- **Email shown site-wide:** Lorna’s email (`content/artist.json`) appears in the footer and About contact.
+- **www redirects to apex:** handled by `worker/index.mjs` (301 to `https://lornabenson.com`), not a dashboard rule.
 - **Public repo:** `drewster99/lorna-benson-website` is public (`__PUBLIC_REPO`).
