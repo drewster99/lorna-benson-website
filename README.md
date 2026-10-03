@@ -1,6 +1,6 @@
 # Lorna Benson — artist portfolio
 
-A warm, accessible, art-first static website for Lorna Benson in Gladstone, Michigan. No client-side JavaScript (the Content Security Policy blocks scripts), tracking, third-party fonts or framework; the only code that runs is a server-side Cloudflare Worker that redirects www to the apex domain. Works published on the artist’s original **Kids’ Portraits** website keep their titles and media from it. **Water Lily** (watercolor) came from an unpublished upload on the old site; its title and medium are placeholders pending confirmation from the family.
+A warm, accessible, art-first static website for Lorna Benson in Gladstone, Michigan. No client-side JavaScript (the Content Security Policy blocks scripts), tracking, third-party fonts or framework; the only code that runs is a separate server-side Cloudflare Worker that redirects www to the apex domain; the site itself is served as static assets. Works published on the artist’s original **Kids’ Portraits** website keep their titles and media from it. **Water Lily** (watercolor) came from an unpublished upload on the old site; its title and medium are placeholders pending confirmation from the family.
 
 ## Develop and build
 
@@ -29,16 +29,16 @@ The build produces home, all-works gallery, one gallery per medium, About/contac
 
 ## Cloudflare
 
-The Worker `lorna-benson-website` is deployed and serves `lornabenson.com` and `www.lornabenson.com` as custom domains declared in `wrangler.jsonc`. The workers.dev URL and preview URLs are disabled. The DNS zone holds no other records: the old cPanel/Namecheap web and mail records were removed on 2026-10-02.
+Two Workers, both declared in the repo. The assets-only Worker `lorna-benson-website` (`wrangler.jsonc`) serves `dist/` on the custom domain `lornabenson.com`; no Worker script runs for site requests, so they are free and never count against the Workers request limit. The Worker `lorna-benson-www-redirect` (`wrangler.www-redirect.jsonc`, `worker/www-redirect.mjs`) owns `www.lornabenson.com` and 301-redirects it to the same path and query on `https://lornabenson.com`; it is separate because static asset routing cannot match on host, and running a script before assets would bill every asset request. workers.dev and preview URLs are disabled on both. The DNS zone holds no other records: the old cPanel/Namecheap web and mail records were removed on 2026-10-02.
 
-### Recommended: Workers Builds + static assets
+### Continuous deployment: Workers Builds (not connected yet)
 
-1. Cloudflare dashboard → Workers & Pages → create/import a Worker from the public GitHub repository `drewster99/lorna-benson-website`, branch `main`.
+1. Cloudflare dashboard → Workers & Pages → `lorna-benson-website` → Settings → Builds → Connect; choose the public GitHub repository `drewster99/lorna-benson-website`, branch `main`. The Worker name must match `name` in `wrangler.jsonc` or the build fails.
 2. Root directory: repository root. Node version: **22** (set `NODE_VERSION=22` if needed).
 3. Build command: `npm ci --ignore-scripts && npm run build`.
-4. Deploy command: `npx wrangler deploy` (Wrangler is pinned in devDependencies; install devDependencies during build).
-5. `wrangler.jsonc` names `lorna-benson-website`, serves `./dist` assets with trailing-slash HTML handling and real 404 handling. `worker/index.mjs` runs first on every request only to 301-redirect `www.lornabenson.com` to `https://lornabenson.com` (asset routing cannot match on host); everything else goes to the `ASSETS` binding, which still applies `_headers`. No secrets are required. Connect the build trigger for pushes to main.
-6. Custom domains come from `routes` in `wrangler.jsonc`; `wrangler deploy` creates their DNS records. The canonical URLs use `https://lornabenson.com`.
+4. Deploy command: `npx wrangler deploy` (Wrangler is pinned in devDependencies; install devDependencies during build). This deploys only `lorna-benson-website`; never use `npm run deploy` here, because Builds forces the Worker name and would upload the redirect Worker over the site. Deploy the redirect Worker manually (`npx wrangler deploy --config wrangler.www-redirect.jsonc`) when its code or config changes.
+5. `wrangler.jsonc` names `lorna-benson-website` and is assets-only (no `main`, no binding, no `run_worker_first`): Cloudflare applies `_headers`, `_redirects`, trailing-slash handling and the 404 page directly. No secrets are required. Connect the build trigger for pushes to main.
+6. Custom domains come from `routes` in each config; `wrangler deploy` creates their DNS records and removes any custom domain no longer listed for that Worker. Outside an interactive terminal it also silently takes over a hostname held by another Worker, so never list `www.lornabenson.com` in `wrangler.jsonc`. The canonical URLs use `https://lornabenson.com`.
 
 Local configuration validation without deployment/authentication:
 
@@ -46,7 +46,7 @@ Local configuration validation without deployment/authentication:
 npm run check:deploy
 ```
 
-Manual authenticated deployment, only when desired: `npm run deploy`.
+Manual authenticated deployment, only when desired: `npm run deploy` (redirect Worker first, then the site; the order matters).
 
 ## Biography, sources and privacy
 

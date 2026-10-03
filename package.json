@@ -6,8 +6,8 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "preview": "node scripts/preview.mjs",
-    "deploy": "npm run build && wrangler deploy",
-    "check:deploy": "npm run build && wrangler deploy --dry-run"
+    "deploy": "npm run build && wrangler deploy --config wrangler.www-redirect.jsonc && wrangler deploy",
+    "check:deploy": "npm run build && wrangler deploy --config wrangler.www-redirect.jsonc --dry-run && wrangler deploy --dry-run"
   },
   "engines": {
     "node": ">=22"

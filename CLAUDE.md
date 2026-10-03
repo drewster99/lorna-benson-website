@@ -2,7 +2,7 @@
 
 Decisions made by Andrew (site owner). Follow them; change only with his explicit consent. See README.md for build/pipeline details.
 
-- **Hosting:** Cloudflare Worker `lorna-benson-website` serving `dist/` as static assets. `lornabenson.com` and `www.lornabenson.com` are Worker custom domains declared in `wrangler.jsonc`; workers.dev and preview URLs are off. The Cloudflare DNS zone contains no other records (old Namecheap cPanel web/mail records were deleted 2026-10-02; backup at `../lornabenson.com-dns-backup-2026-10-02.txt`).
+- **Hosting:** Two Cloudflare Workers, both declared in the repo. `lorna-benson-website` (`wrangler.jsonc`) is assets-only: it serves `dist/` on the custom domain `lornabenson.com` with no Worker script, so asset requests are free and never count against the Workers request limit. `lorna-benson-www-redirect` (`wrangler.www-redirect.jsonc`) owns the custom domain `www.lornabenson.com`. workers.dev and preview URLs are off on both. The Cloudflare DNS zone contains no other records (old Namecheap cPanel web/mail records were deleted 2026-10-02; backup at `../lornabenson.com-dns-backup-2026-10-02.txt`).
 - **No email on the domain:** lornabenson.com has no mailboxes; mail records were removed deliberately.
 - **Artwork display is cropped:** each work is shown straightened and trimmed out of its frame/wall photo using `artCorners` in `content/works.json`. Originals in `artwork/` stay byte-identical and are linked from every detail page.
 - **Artist photo:** `photos/lorna-benson.jpeg` is Lorna (confirmed). Use it on Home and About.
@@ -10,6 +10,7 @@ Decisions made by Andrew (site owner). Follow them; change only with his explici
 - **Removed copy:** the About-page note “The artist’s hometown and length of residence were provided by her family. Artwork titles and media are retained from her original website.” must not return.
 - **Water Lily is provisional:** title “Water Lily” and medium “watercolor” are placeholders; Andrew will confirm them with the family.
 - **Email shown site-wide:** Lorna’s email (`content/artist.json`) appears in the footer and About contact.
-- **www redirects to apex:** handled by `worker/index.mjs` (301 to `https://lornabenson.com`), not a dashboard rule.
+- **www redirects to apex:** handled by `worker/www-redirect.mjs` in the `lorna-benson-www-redirect` Worker (301 to `https://lornabenson.com`, path and query kept), not a dashboard rule. Never give `lorna-benson-website` a `main` script or `run_worker_first`; that bills every asset request.
+- **Deploy order:** `npm run deploy` deploys the redirect Worker, then the site. Each `wrangler deploy` replaces its Worker’s whole custom-domain set and, outside an interactive terminal, silently takes over hostnames held by other Workers. Never list `www.lornabenson.com` in `wrangler.jsonc`. If Workers Builds is connected, its deploy command must stay `npx wrangler deploy` (site only).
 - **HSTS:** `Strict-Transport-Security: max-age=31536000` is set once, on `/*` in `src/_headers` (never repeat it in another rule; duplicates are comma-joined). No `includeSubDomains`, no preload, deliberately. Cloudflare dashboard HSTS stays off. The zone’s Always Use HTTPS must stay on, because HSTS cannot protect a first visit over plain HTTP.
 - **Public repo:** `drewster99/lorna-benson-website` is public (`__PUBLIC_REPO`).
