@@ -5,8 +5,9 @@
     "medium": "colored pencil",
     "source": "artwork/blowing-out-candles.jpeg",
     "sha256": "f95b686b57e5d7517c28f6452ab6a0226bbb8466c8af61e6093bfe07da1408a2",
-    "alt": "A child at a birthday cake beneath colorful balloons. Photograph of framed artwork by Lorna Benson.",
-    "legacySource": "out/gallery_gen/9f62141bc7a562ea5d9e00cc427c159c.jpeg"
+    "alt": "A boy in a party hat blowing out the candles on his birthday cake, surrounded by balloons.",
+    "legacySource": "out/gallery_gen/9f62141bc7a562ea5d9e00cc427c159c.jpeg",
+    "artCorners": [[75, 207], [626, 195], [608, 838], [118, 825]]
   },
   {
     "slug": "packer-fan",
@@ -14,8 +15,9 @@
     "medium": "graphite",
     "source": "artwork/packer-fan.jpeg",
     "sha256": "e3a6286eed9d80e134137bf8dcd4ed412fea82baae86a137b1427095c431793b",
-    "alt": "A young child seated beside a tree, rendered in graphite. Photograph of framed artwork by Lorna Benson.",
-    "legacySource": "out/gallery_gen/1f0dbaf24580659ad9ee37cc7daf6f8d.jpeg"
+    "alt": "A young boy in a Green Bay football jersey sitting at the foot of a tree, drawn in graphite.",
+    "legacySource": "out/gallery_gen/1f0dbaf24580659ad9ee37cc7daf6f8d.jpeg",
+    "artCorners": [[8, 88], [757, 70], [690, 878], [98, 832]]
   },
   {
     "slug": "little-blondie",
@@ -23,8 +25,9 @@
     "medium": "colored pencil",
     "source": "artwork/little-blondie.jpeg",
     "sha256": "8c4094650e939ecd0466e24db0891ff296ff6a84d36c1f220d0e597178feb99b",
-    "alt": "A smiling blond child against a blue background. Photograph of framed artwork by Lorna Benson.",
-    "legacySource": "out/gallery_gen/a2c268383096d3829f50a7960761a23b.jpeg"
+    "alt": "A smiling child with tousled blond curls against a speckled blue background.",
+    "legacySource": "out/gallery_gen/a2c268383096d3829f50a7960761a23b.jpeg",
+    "artCorners": [[150, 70], [1175, 95], [1150, 795], [175, 808]]
   },
   {
     "slug": "brothers",
@@ -32,8 +35,9 @@
     "medium": "chalk pastel",
     "source": "artwork/brothers.jpeg",
     "sha256": "1fb690de7c55115ab48703b89d5a3ece5d119f2a8407b7822dc8f539986edf7a",
-    "alt": "Two children fishing together on a rocky shore. Photograph of framed artwork by Lorna Benson.",
-    "legacySource": "out/gallery_gen/3bc1ebe1356183eb3e2695912ab0b7ac.jpeg"
+    "alt": "Two young brothers sitting on lakeshore rocks, one holding a stick as a fishing pole.",
+    "legacySource": "out/gallery_gen/3bc1ebe1356183eb3e2695912ab0b7ac.jpeg",
+    "artCorners": [[217, 268], [1232, 267], [1118, 846], [314, 858]]
   },
   {
     "slug": "look-what-i-caught",
@@ -41,8 +45,9 @@
     "medium": "colored pencil",
     "source": "artwork/look-what-i-caught.jpeg",
     "sha256": "6dc268389b0de39969720f1d275276ac03486f3d0be8a7df6d4d5d5c0af1b14b",
-    "alt": "A smiling child holding a small catch among tall grasses. Photograph of framed artwork by Lorna Benson.",
-    "legacySource": "out/gallery_gen/af5657d7e701250c98289123fde416cf.jpeg"
+    "alt": "A grinning boy among tall grasses, holding up a frog in each hand.",
+    "legacySource": "out/gallery_gen/af5657d7e701250c98289123fde416cf.jpeg",
+    "artCorners": [[282, 108], [1168, 120], [1170, 838], [290, 856]]
   },
   {
     "slug": "best-friends",
@@ -50,8 +55,9 @@
     "medium": "chalk pastel",
     "source": "artwork/best-friends.jpeg",
     "sha256": "cf9484e8656d14b331948432e5321325e6ff344a3e7e7774d37aaf7524d9aed5",
-    "alt": "Three children smiling together. Photograph of framed artwork by Lorna Benson.",
-    "legacySource": "out/gallery_gen/4a4d3e7974618097b29fd9985a0dccfd.jpeg"
+    "alt": "Three smiling little girls standing shoulder to shoulder.",
+    "legacySource": "out/gallery_gen/4a4d3e7974618097b29fd9985a0dccfd.jpeg",
+    "artCorners": [[148, 170], [1278, 148], [1280, 845], [175, 858]]
   },
   {
     "slug": "attitude",
@@ -59,8 +65,9 @@
     "medium": "chalk pastel",
     "source": "artwork/attitude.jpeg",
     "sha256": "ef1a12cf3c15ec077c46459b8396324b2f33cfcdc59bad9e4f69a43bc4570963",
-    "alt": "A young child crouched outdoors in a cap and dark jacket. Photograph of framed artwork by Lorna Benson.",
-    "legacySource": "out/gallery_gen/1e1857ea02b93605f1f609cd3317b8ae.jpeg"
+    "alt": "A toddler in sunglasses and a dark jacket sitting on rocks outdoors.",
+    "legacySource": "out/gallery_gen/1e1857ea02b93605f1f609cd3317b8ae.jpeg",
+    "artCorners": [[92, 195], [662, 143], [690, 922], [127, 928]]
   },
   {
     "slug": "happy-dance",
@@ -68,8 +75,9 @@
     "medium": "chalk pastel",
     "source": "artwork/happy-dance.jpeg",
     "sha256": "ad156a72579357685f86455296cb74e097bd8b75c8a19bb5b0ef432b7be02afa",
-    "alt": "A young child dancing beneath balloons. Photograph of framed artwork by Lorna Benson.",
-    "legacySource": "out/gallery_gen/a0b8596e2dc859fc44214f82e2adaada.jpeg"
+    "alt": "A little girl in a yellow dress dancing beneath a bunch of balloons, set against black.",
+    "legacySource": "out/gallery_gen/a0b8596e2dc859fc44214f82e2adaada.jpeg",
+    "artCorners": [[42, 65], [780, 58], [738, 1012], [90, 993]]
   },
   {
     "slug": "first-attempt",
@@ -77,8 +85,9 @@
     "medium": "colored pencil",
     "source": "artwork/first-attempt.jpeg",
     "sha256": "9128a05ce3fc54a87123e676a16b035e19e62857d2e535ee6d05c34f423b21c5",
-    "alt": "A child in a colorful costume with wings and a decorated hat. Photograph of framed artwork by Lorna Benson.",
-    "legacySource": "out/gallery_gen/fed69b1cb27374faaf383a1656151626.jpeg"
+    "alt": "A little girl wearing fairy wings and a paper crown, playing a small brass horn.",
+    "legacySource": "out/gallery_gen/fed69b1cb27374faaf383a1656151626.jpeg",
+    "artCorners": [[102, 42], [772, 40], [742, 935], [106, 920]]
   },
   {
     "slug": "big-brother",
@@ -86,8 +95,9 @@
     "medium": "chalk pastel",
     "source": "artwork/big-brother.jpeg",
     "sha256": "fb0cf8fbacb0b52c8d560d87456526825dc495e2ce05ce7976e042db58216d07",
-    "alt": "An older child embracing a younger child. Photograph of framed artwork by Lorna Benson.",
-    "legacySource": "out/gallery_gen/2521adae6861df46a6ce315e3fadf266.jpeg"
+    "alt": "A smiling toddler wrapped in a warm hug.",
+    "legacySource": "out/gallery_gen/2521adae6861df46a6ce315e3fadf266.jpeg",
+    "artCorners": [[365, 190], [1052, 190], [1048, 935], [382, 948]]
   },
   {
     "slug": "hide-and-seek",
@@ -95,8 +105,9 @@
     "medium": "colored pencil",
     "source": "artwork/hide-and-seek.jpeg",
     "sha256": "b97f1aa75be1aed26bf60bbdf152e0ea1b5fb498183784429c02e07f074342c7",
-    "alt": "A child peeking out from a pink blanket. Photograph of framed artwork by Lorna Benson.",
-    "legacySource": "out/gallery_gen/8a55d1a9bd8fc0635c301f3c7373f97f.jpeg"
+    "alt": "A dark-eyed baby peeking out from a pink blanket, framed by a border of small flowers.",
+    "legacySource": "out/gallery_gen/8a55d1a9bd8fc0635c301f3c7373f97f.jpeg",
+    "artCorners": [[95, 193], [622, 180], [632, 985], [100, 990]]
   },
   {
     "slug": "little-em",
@@ -104,8 +115,9 @@
     "medium": "colored pencil",
     "source": "artwork/little-em.jpeg",
     "sha256": "213189dc7ebb5dc34d99a89e894f6e2265dda882d1987db197b69b18cea7d89a",
-    "alt": "A small child seated among flowers. Photograph of framed artwork by Lorna Benson.",
-    "legacySource": "out/gallery_gen/5cabebe27010510d956decf2685b903f.jpeg"
+    "alt": "A little girl with blond pigtails in a colorful swimsuit, sitting on dark rocks.",
+    "legacySource": "out/gallery_gen/5cabebe27010510d956decf2685b903f.jpeg",
+    "artCorners": [[30, 160], [662, 175], [648, 840], [95, 900]]
   },
   {
     "slug": "gracie-with-smore",
@@ -113,8 +125,9 @@
     "medium": "colored pencil",
     "source": "artwork/gracie-with-smore.jpeg",
     "sha256": "0981bcd33b42d1edf8c6b9afa868faf14479f67d95715225997edb73adbe0d60",
-    "alt": "A child seated in a folding chair, holding a treat. Photograph of framed artwork by Lorna Benson.",
-    "legacySource": "out/gallery_gen/e1d33fccb8332cb2d80881b3c545fb18.jpeg"
+    "alt": "A small child in a green folding beach chair by the water, holding a s'more.",
+    "legacySource": "out/gallery_gen/e1d33fccb8332cb2d80881b3c545fb18.jpeg",
+    "artCorners": [[12, 145], [722, 142], [733, 1025], [50, 1027]]
   },
   {
     "slug": "tree-huggers",
@@ -122,8 +135,9 @@
     "medium": "chalk pastel",
     "source": "artwork/tree-huggers.jpeg",
     "sha256": "52fe0c6ae8b735b94975e5b05e3bbe48d00e13fbb1d7881612bdb35147cc029c",
-    "alt": "Two children beside a large tree trunk. Photograph of framed artwork by Lorna Benson.",
-    "legacySource": "out/gallery_gen/18b857a1184571cf2921f900798973f6.jpeg"
+    "alt": "Two small children hugging a tree trunk; one wears a bike helmet and sunglasses.",
+    "legacySource": "out/gallery_gen/18b857a1184571cf2921f900798973f6.jpeg",
+    "artCorners": [[78, 57], [1378, 45], [1325, 935], [150, 950]]
   },
   {
     "slug": "not-out",
@@ -131,8 +145,9 @@
     "medium": "colored pencil",
     "source": "artwork/not-out.jpeg",
     "sha256": "f266b15b59def392a046d651cddefdf00a9128b4989316e91b547820c2ac6e21",
-    "alt": "A child in baseball clothing on a porch. Photograph of framed artwork by Lorna Benson.",
-    "legacySource": "out/gallery_gen/45639d903fc2db41d2eb3bcd6eab4772.jpeg"
+    "alt": "A runner sliding into home plate as the catcher reaches for the tag and the umpire looks on.",
+    "legacySource": "out/gallery_gen/45639d903fc2db41d2eb3bcd6eab4772.jpeg",
+    "artCorners": [[160, 452], [705, 425], [805, 893], [70, 928]]
   },
   {
     "slug": "christmas-pjs",
@@ -140,7 +155,8 @@
     "medium": "colored pencil",
     "source": "artwork/christmas-pjs.jpeg",
     "sha256": "1d45ef58612ad10d0ae02424888f090b6247870b4adb33bb341a952882b72d96",
-    "alt": "Two children in character pajamas in front of a brick wall. Photograph of framed artwork by Lorna Benson.",
-    "legacySource": "out/gallery_gen/ba771e2fbf8c28b29688c9c56b02ba6d.jpeg"
+    "alt": "Two children in pajamas by a brick fireplace: a boy in a Batman costume and paper crown stands while a girl lounges beside him.",
+    "legacySource": "out/gallery_gen/ba771e2fbf8c28b29688c9c56b02ba6d.jpeg",
+    "artCorners": [[220, 143], [1138, 122], [1200, 902], [222, 950]]
   }
 ]

@@ -18,11 +18,13 @@ The build produces home, all-works gallery, three medium galleries, About/contac
 
 ## Artwork pipeline and editing
 
-- `content/works.json` is the single source of truth: exact title, medium, descriptive alternative text, stable route slug, source image and expected SHA-256. `legacySource` records provenance from the saved old website.
+- `content/works.json` is the single source of truth: exact title, medium, descriptive alternative text (also shown as each work’s description), stable route slug, source image, expected SHA-256 and `artCorners`. `legacySource` records provenance from the saved old website.
+- `artCorners` are the artwork’s four corners in the original photograph (top-left, top-right, bottom-right, bottom-left, in source pixels), placed just inside the mat or paper edge. `scripts/perspective.mjs` straightens that quadrilateral into an upright rectangle, recovering the true proportions from the photo’s perspective (Zhang & He); when only one edge pair converges it assumes the 26 mm-equivalent phone lens the photos were taken with. Display images are therefore straightened and trimmed (no frame, wall, glare edges or hands); colors are not retouched. Each detail page still links the untouched original photograph.
+- `content/artist.json` holds Lorna’s portrait (`photos/lorna-benson.jpeg`, confirmed by family), its SHA-256, alt text and display crop.
 - `artwork/` contains byte-identical copies of the 16 previously published JPEG photographs. Original dimensions are 810×1080 or 1440×1080, not invented larger scans.
-- `scripts/build.mjs` verifies source checksums and metadata, rejects invalid/duplicate slugs, unsupported media and missing alt text, then generates responsive WebP and JPEG derivatives at 360, 640, 960 and native widths as appropriate. Never upscales. sRGB conversion, no cropping/retouching, stripped derivative metadata.
+- `scripts/build.mjs` verifies source checksums and metadata, rejects invalid/duplicate slugs, unsupported media and missing alt text, rectifies each artwork from its corners, then generates responsive WebP and JPEG derivatives at 360, 640, 960, 1280 and native widths as appropriate. Never upscales. sRGB conversion, no color retouching, stripped derivative metadata. Per-work proportions are emitted into the hashed stylesheet (the CSP forbids inline styles) to drive the justified gallery walls.
 - Responsive `picture/srcset/sizes`, explicit dimensions and below-fold lazy loading reduce payload and reserve layout space. Hashed derivative/style filenames use immutable caching. Original links are same-origin and only downloaded when chosen.
-- To add/change a work: obtain publishable title/medium and approved photograph, inspect privacy metadata, add source and update its SHA-256 (`shasum -a 256 artwork/filename.jpeg`), add accurate alt text, build and test. Do not replace the originals with resized images.
+- To add/change a work: obtain publishable title/medium and approved photograph, inspect privacy metadata, add source and update its SHA-256 (`shasum -a 256 artwork/filename.jpeg`), add accurate alt text, measure `artCorners` on the photo, build and check the straightened result for edge slivers. Do not replace the originals with resized images.
 - `src/style.css` controls the design; `src/_headers` carries CSP, permissions, referrer and caching policies. Templates and route generation live in the builder. `build-report.json` records generated sizes locally and is ignored.
 
 ## Cloudflare — connect after GitHub push
@@ -52,13 +54,13 @@ Import the same repository, framework preset **None**, build command `npm ci --i
 
 ## Biography, sources and privacy
 
-The old site had **no About the Artist** section. Hometown and residence of more than 50 years were supplied by Lorna’s family. The published About distinguishes these from the independent source:
+The old site had **no About the Artist** section. Hometown and residence of more than 50 years were supplied by Lorna’s family. The About write-up uses only those facts, the independent source below, and what is visible in the works themselves (subjects, media, her LKB initials); nothing else is invented:
 
 - Clarissa Kell, Daily Press, September 7, 2019: [“‘Play’ mural unveiled in Gladstone”](https://www.dailypress.net/news/local-news/2019/09/play-mural-unveiled-in-gladstone/). Reports Lorna speaking at the unveiling and thanking community supporters. It does **not** establish that she created the mural; no such claim is made.
 
 No verifiable additional awards, training or exhibition history was found in the regional search. Portrait subjects are not newly identified beyond legacy titles. The old public artist email is reused; street addresses, phone, private biography and people-finder data are not published. A name-only sharing preview avoids amplifying a child’s portrait. Contact availability should be reviewed by Lorna if the old email changes.
 
-Preserved legacy `home.html`, `images.json`, `Home.webarchive`, `gallery/` and `out/` remain local and ignored. Audit, backups, CLI reviews and browser-test evidence are retained outside the repository in AgentSmith task evidence, never deployed. Uncaptioned flower artwork, unknown-identity artist photograph and unrelated template assets were not newly published.
+Preserved legacy `home.html`, `images.json`, `Home.webarchive`, `gallery/` and `out/` remain local and ignored. Audit, backups, CLI reviews and browser-test evidence are retained outside the repository in AgentSmith task evidence, never deployed. The artist photograph (`gallery/DSC_0030…`) was confirmed by family as Lorna and is published on Home and About. The uncaptioned watercolor flower (`gallery/IMG_3099…`) and unrelated template assets were not published. The 2016–2019 lornabenson.com (“Medieval Romances”) is not confirmed to be the same person and is not referenced.
 
 ## Quality checks
 

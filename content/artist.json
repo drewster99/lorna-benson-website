@@ -1,0 +1,10 @@
+{
+  "name": "Lorna Benson",
+  "portrait": {
+    "source": "photos/lorna-benson.jpeg",
+    "sha256": "56b03ada780b9cbfc341024ad1626356ff9ffedaf212383d380928d8926061fd",
+    "alt": "Lorna Benson, smiling, with white hair and glasses, wearing a red turtleneck.",
+    "crop": {"left": 95, "top": 0, "width": 900, "height": 1080},
+    "legacySource": "gallery/DSC_0030-ts1644190758.jpeg"
+  }
+}
