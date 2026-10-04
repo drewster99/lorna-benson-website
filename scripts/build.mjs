@@ -3,6 +3,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import sharp from 'sharp';
 import {fileURLToPath} from 'node:url';
+import {execFileSync} from 'node:child_process';
 import {rectifyArtwork} from './perspective.mjs';
 const siteRoot=fileURLToPath(new URL('../',import.meta.url));
 process.chdir(siteRoot);
@@ -19,8 +20,31 @@ const listInWords = items => items.length<2?items.join(''):`${items.slice(0,-1).
 const mediaInWords = listInWords(media);
 const numberWords = ['zero','one','two','three','four','five','six','seven','eight','nine'];
 const mediumSlug = s => s.replaceAll(' ','-');
+// What one work in each medium is called in prose ("one watercolor", "nine colored pencil drawings").
+const mediumWorkNouns = {'colored pencil':['colored pencil drawing','colored pencil drawings'],'chalk pastel':['chalk pastel','chalk pastels'],'graphite':['graphite drawing','graphite drawings'],'watercolor':['watercolor','watercolors']};
+const countInWords = n => numberWords[n] ?? String(n);
+const mediumWorkCount = (medium,n) => `${countInWords(n)} ${mediumWorkNouns[medium][n===1?0:1]}`;
+// Optional per-work facts; each renders on the work's page only when present in content/works.json.
+const availabilityLabels = {'available':'Available','sold':'Sold','private-collection':'In a private collection','not-for-sale':'Not for sale'};
+const sizeUnits = {in:{label:'in',unitCode:'INH'},cm:{label:'cm',unitCode:'CMT'}};
+const workKeys = new Set(['slug','title','medium','source','sha256','alt','legacySource','artCorners','year','size','availability']);
 const pipelineHash = hash(JSON.stringify({versions: sharp.versions, widths: [360,640,960,1280,'native'], webpQuality:82, jpegQuality:85, colourspace:'srgb', perspective:2, pipelineVersion:2})).slice(0,8);
 const isPoint = p => Array.isArray(p) && p.length===2 && p.every(Number.isFinite);
+
+/**
+ * Sitemap lastmod: the committer date of the newest commit touching any build input. Every page is rendered
+ * from the same inputs (one manifest, one template), so one date is honest for all of them, and reading it from
+ * git keeps builds reproducible (file mtimes are reset by every checkout). A shallow clone could report the
+ * wrong commit, so it is refused rather than guessed at.
+ */
+function committedContentDate(){
+  const git=args=>execFileSync('git',args,{encoding:'utf8'}).trim();
+  if (git(['rev-parse','--is-shallow-repository'])!=='false') throw Error('Sitemap lastmod needs full git history; this clone is shallow (git fetch --unshallow).');
+  const date=git(['log','-1','--format=%cI','--','content','artwork','photos','scripts','src']);
+  if (!date) throw Error('Sitemap lastmod needs at least one commit touching the build inputs.');
+  return date;
+}
+const lastModified=committedContentDate();
 
 async function verifiedOriginal(source, sha256, label) {
   const bytes = await fs.readFile(source);
@@ -34,12 +58,21 @@ const seen = new Set();
 for (const w of works) {
   if (!/^[a-z0-9-]+$/.test(w.slug) || seen.has(w.slug) || !media.includes(w.medium) || !w.alt?.trim() || !w.title?.trim()) throw Error('Invalid artwork manifest: '+w.slug);
   if (!Array.isArray(w.artCorners) || w.artCorners.length!==4 || !w.artCorners.every(isPoint)) throw Error('Artwork needs four [x, y] artCorners: '+w.slug);
+  const unknownKeys = Object.keys(w).filter(k=>!workKeys.has(k));
+  if (unknownKeys.length) throw Error(`Unknown artwork field(s) ${unknownKeys.join(', ')}: ${w.slug}`);
+  if (w.year!==undefined && !(Number.isInteger(w.year) && w.year>=1900 && w.year<=new Date().getFullYear())) throw Error('Artwork year must be a four-digit year, not in the future: '+w.slug);
+  if (w.size!==undefined) {
+    const {height, width, unit, ...extra} = w.size ?? {};
+    if (Object.keys(extra).length || !Object.hasOwn(sizeUnits, unit) || ![height,width].every(n=>Number.isFinite(n) && n>0)) throw Error('Artwork size must be {"height": number, "width": number, "unit": "in" | "cm"}: '+w.slug);
+  }
+  if (w.availability!==undefined && !Object.hasOwn(availabilityLabels, w.availability)) throw Error(`Artwork availability must be one of ${Object.keys(availabilityLabels).join(', ')}: ${w.slug}`);
   seen.add(w.slug);
   w.photo = await verifiedOriginal(w.source, w.sha256, w.slug);
 }
 if (!artist.portrait?.alt?.trim()) throw Error('Artist portrait needs alternative text');
 if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(artist.email ?? '')) throw Error('Artist needs a contact email');
 if (!numberWords[media.length]) throw Error('Add a number word for '+media.length+' media');
+for (const m of media) if (mediumWorkNouns[m]?.length!==2) throw Error('Medium needs singular and plural work nouns: '+m);
 const portraitPhoto = await verifiedOriginal(artist.portrait.source, artist.portrait.sha256, 'artist portrait');
 const {crop} = artist.portrait;
 if (crop.left<0 || crop.top<0 || crop.left+crop.width>portraitPhoto.width || crop.top+crop.height>portraitPhoto.height) throw Error('Artist portrait crop is outside the photograph');
@@ -97,10 +130,18 @@ function hang(rows,{eager=0,captions=true,rowHeight=220,label='Artworks'}={}){
 
 const nav=(active,route)=>`<a class="skip" href="#main">Skip to content</a><header class="header wrap"><a class="wordmark" href="/">Lorna Benson<span>Artist · Gladstone, Michigan</span></a><nav aria-label="Main navigation"><a href="/gallery/" ${active==='gallery'?`aria-current="${route==='/gallery/'?'page':'true'}"`:''}>The work</a><a href="/about/" ${active==='about'?'aria-current="page"':''}>About the artist</a><a href="/about/#contact">Contact</a></nav></header>`;
 const footer=`<footer class="footer"><div class="wrap footer-inner"><div><a class="footer-name" href="/">Lorna Benson</a><p>Portraits. People. The moments between.</p><a class="footer-email" href="mailto:${esc(artist.email)}">${esc(artist.email)}</a></div><div><a href="/gallery/">Explore the collection ${arrow}</a><p>© Lorna Benson. All artwork rights reserved.</p></div></div></footer>`;
+/** Absolute URL of an image's largest JPEG derivative, for structured data and the image sitemap. */
+const largestJpegURL=image=>`${origin}${image.base}-${image.sizes.at(-1)}.jpeg`;
+const personId=`${origin}/#lorna-benson`;
+const personReference={'@type':'Person','@id':personId,name:'Lorna Benson',url:`${origin}/`};
+/** JSON-LD as a data block; `<` is escaped so no string in the data can close the script element. */
+const jsonLd=data=>`<script type="application/ld+json">${JSON.stringify({'@context':'https://schema.org',...data}).replaceAll('<','\\u003c')}</script>`;
+
 const routes=[];
-async function page(route,title,description,body,active='',noindex=false){
-  const html=`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(title)} | Lorna Benson</title><meta name="description" content="${esc(description)}"><meta name="theme-color" content="#f6f1e7">${noindex?'<meta name="robots" content="noindex">':`<link rel="canonical" href="${origin}${route}">`}<meta property="og:title" content="${esc(title)} | Lorna Benson"><meta property="og:description" content="${esc(description)}"><meta property="og:type" content="website"><meta property="og:url" content="${origin}${route}"><meta property="og:image" content="${origin}/social.png"><meta property="og:image:alt" content="Lorna Benson — Artist, Gladstone, Michigan"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="${cssPath}"></head><body>${nav(active,route)}<main id="main">${body}</main>${footer}</body></html>`;
-  const dest=route==='/404.html'?out+route:out+route+'index.html';await fs.mkdir(path.dirname(dest),{recursive:true});await fs.writeFile(dest,html);if(!noindex)routes.push(route);
+/** Writes one HTML page. `images` are the page's own images, listed for it in the image sitemap. */
+async function page(route,title,description,body,{active='',noindex=false,structuredData=null,images=[]}={}){
+  const html=`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(title)} | Lorna Benson</title><meta name="description" content="${esc(description)}"><meta name="theme-color" content="#f6f1e7">${noindex?'<meta name="robots" content="noindex">':`<link rel="canonical" href="${origin}${route}">`}<meta property="og:title" content="${esc(title)} | Lorna Benson"><meta property="og:description" content="${esc(description)}"><meta property="og:type" content="website"><meta property="og:url" content="${origin}${route}"><meta property="og:image" content="${origin}/social.png"><meta property="og:image:alt" content="Lorna Benson — Artist, Gladstone, Michigan"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="${cssPath}">${structuredData?jsonLd(structuredData):''}</head><body>${nav(active,route)}<main id="main">${body}</main>${footer}</body></html>`;
+  const dest=route==='/404.html'?out+route:out+route+'index.html';await fs.mkdir(path.dirname(dest),{recursive:true});await fs.writeFile(dest,html);if(!noindex)routes.push({route,images});
 }
 
 const heroSelection=[['tree-huggers','happy-dance','hide-and-seek'],['little-blondie','best-friends']];
@@ -114,6 +155,7 @@ const mediumNotes={
 };
 for (const m of media) if (!mediumCovers[m] || !mediumNotes[m]?.trim()) throw Error('Medium needs a cover and a note: '+m);
 const homeSelection=[['blowing-out-candles','brothers','first-attempt'],['christmas-pjs','little-em','not-out'],['big-brother','gracie-with-smore','attitude']];
+const artistPerson={...personReference,jobTitle:'Artist',description:`Artist in Gladstone, Michigan, making children’s portraits and more in ${mediaInWords}.`,image:largestJpegURL(portrait),email:artist.email,address:{'@type':'PostalAddress',addressLocality:'Gladstone',addressRegion:'MI',addressCountry:'US'}};
 const portraitSizes='(max-width: 599px) min(calc(100vw - 54px), 286px), (max-width: 899px) 360px, (max-width: 1099px) 280px, 340px';
 
 await page('/','Portraits of everyday wonder',`Children’s portraits and more in ${mediaInWords} by Gladstone, Michigan artist Lorna Benson.`,`
@@ -121,7 +163,7 @@ await page('/','Portraits of everyday wonder',`Children’s portraits and more i
   <div class="hero-copy">
     <p class="eyebrow">Kids’ Portraits · Michigan’s Upper Peninsula</p>
     <h1>Everyday moments.<br><em>Lasting wonder.</em></h1>
-    <p class="intro">A birthday wish blown at full force. A frog in each hand. Best friends, shoulder to shoulder. Children’s portraits by Lorna Benson, in colored pencil, chalk pastel and graphite.</p>
+    <p class="intro">Children’s portraits by Lorna Benson, in colored pencil, chalk pastel and graphite. A birthday wish blown at full force. A frog in each hand. Best friends, shoulder to shoulder.</p>
     <div class="hero-actions"><a class="button" href="/gallery/">Explore the collection ${arrow}</a><a class="text-link" href="/about/">Meet the artist</a></div>
   </div>
   ${hang(heroSelection,{eager:5,captions:false,label:'Selected portraits'})}
@@ -156,30 +198,54 @@ await page('/','Portraits of everyday wonder',`Children’s portraits and more i
       <a class="button" href="/about/">About Lorna ${arrow}</a>
     </div>
   </div>
-</section>`);
+</section>`,{structuredData:artistPerson});
 
+/** Gallery meta description: names the count in words and the works themselves, so no page reads "Explore 1 watercolor work". */
+function galleryDescription(medium,list){
+  if (!medium) return `All ${list.length} works by Gladstone, Michigan artist Lorna Benson in ${mediaInWords}, most of them portraits of childhood.`;
+  const lead=`${capitalize(mediumWorkCount(medium,list.length))} by Gladstone, Michigan artist Lorna Benson`;
+  const titles=list.map(w=>w.title);
+  return titles.length<=3?`${lead}: ${listInWords(titles)}.`:`${lead}, including ${listInWords(titles.slice(0,3))}.`;
+}
 for (const medium of [null,...media]) {
   const list=medium?works.filter(w=>w.medium===medium):works;const route=medium?`/gallery/${mediumSlug(medium)}/`:'/gallery/';
   const filters=[['All works',works.length,'/gallery/'],...media.map(m=>[capitalize(m),works.filter(w=>w.medium===m).length,`/gallery/${mediumSlug(m)}/`])];
-  await page(route,medium?`${capitalize(medium)} works`:'The work',`Explore ${count(list.length,`${medium??'original'} work`)} by Lorna Benson. View each artwork in detail.`,`
+  await page(route,medium?capitalize(mediumWorkNouns[medium][1]):'The work',galleryDescription(medium,list),`
 <section class="page-intro wrap">
   <p class="eyebrow">The collection</p>
-  <h1>${medium?`In <em>${esc(medium)}.</em>`:'The joy of <em>being little.</em>'}</h1>
-  <p class="intro">${medium?`${count(list.length,'work')} in ${esc(medium)} by Lorna Benson.`:`A birthday wish, a shared adventure, a quiet smile. ${works.length} works in ${mediaInWords}, most of them portraits of childhood.`}</p>
+  <h1>${medium?`Lorna Benson <em>in ${esc(medium)}.</em>`:'The joy of <em>being little.</em>'}</h1>
+  <p class="intro">${medium?`${esc(capitalize(mediumWorkCount(medium,list.length)))}. ${esc(mediumNotes[medium])}`:`A birthday wish, a shared adventure, a quiet smile. ${works.length} works by Lorna Benson in ${mediaInWords}, most of them portraits of childhood.`}</p>
 </section>
 <section class="gallery-section wrap" aria-label="Artwork gallery">
   <nav class="filters" aria-label="Browse by medium">${filters.map(([label,n,url])=>`<a href="${url}" ${url===route?'aria-current="page"':''}>${label} <span>${n}</span></a>`).join('')}</nav>
   <h2 class="visually-hidden">Artworks</h2>
   ${wall(list,{eager:4})}
   <p class="photo-note">Each work is shown straightened and trimmed from a photograph of the framed original; colors are not retouched. Every work’s page links to that untouched photograph.</p>
-</section>`,'gallery');
+</section>`,{active:'gallery'});
 }
 
 const detailSizes=w=>{const r=w.width/w.height;return `(max-width: 799px) calc(100vw - 72px), min(calc(100vw - 200px), ${Math.round(r*72)}vh, ${w.width}px)`;};
+const sizeInWords=({height,width,unit})=>`${height} × ${width} ${sizeUnits[unit].label}`;
+/** Year, size and availability of the original, each shown only when recorded in content/works.json. */
+function workFacts(w){
+  const facts=[
+    w.year!==undefined&&['Year',esc(w.year)],
+    w.size!==undefined&&['Size (height × width)',esc(sizeInWords(w.size))],
+    w.availability!==undefined&&['Original',esc(availabilityLabels[w.availability])+(w.availability==='available'?` · <a href="/about/#contact">Ask Lorna</a>`:'')],
+  ].filter(Boolean);
+  return facts.length?`<dl class="detail-facts">${facts.map(([term,detail])=>`<div><dt>${term}</dt><dd>${detail}</dd></div>`).join('')}</dl>`:'';
+}
+function artworkStructuredData(w,url){
+  const quantity=n=>({'@type':'QuantitativeValue',value:n,unitCode:sizeUnits[w.size.unit].unitCode});
+  return {'@type':'VisualArtwork','@id':`${url}#artwork`,name:w.title,url,image:largestJpegURL(w),description:w.alt,artMedium:w.medium,creator:personReference,copyrightHolder:personReference,
+    ...(w.year!==undefined&&{dateCreated:String(w.year)}),
+    ...(w.size!==undefined&&{height:quantity(w.size.height),width:quantity(w.size.width)})};
+}
 for(let i=0;i<works.length;i++){
   const w=works[i],previous=works[(i+works.length-1)%works.length],next=works[(i+1)%works.length];
   const neighbor=(x,label)=>`<a href="/work/${x.slug}/"><span class="neighbor-thumb">${picture(x,'96px',{alt:''})}</span><span class="neighbor-text"><span>${label}</span>${esc(x.title)}</span></a>`;
-  await page(`/work/${w.slug}/`,w.title,`${w.title}, a ${w.medium} work by Lorna Benson. ${w.alt}`,`
+  const route=`/work/${w.slug}/`;
+  await page(route,w.title,`${w.title}, a ${mediumWorkNouns[w.medium][0]} by Lorna Benson. ${w.alt}`,`
 <section class="detail">
   <div class="wrap"><a class="back-link" href="/gallery/">← Back to the collection</a></div>
   <div class="detail-wall"><figure class="detail-art ar-${w.slug}"><span class="mat">${picture(w,detailSizes(w),{loading:'eager',priority:'high'})}</span></figure></div>
@@ -189,6 +255,7 @@ for(let i=0;i<works.length;i++){
       <h1>${esc(w.title)}</h1>
       <p class="detail-meta">${esc(capitalize(w.medium))} · Lorna Benson</p>
       <p class="detail-description">${esc(w.alt)}</p>
+      ${workFacts(w)}
     </div>
     <div class="original-bar">
       <div><h2>See it in its frame.</h2><p>The untouched photograph this view was made from, frame and all.<br>JPEG · ${w.photo.width} × ${w.photo.height} pixels · ${Math.round(w.photo.bytes/1024)} KB</p></div>
@@ -196,7 +263,7 @@ for(let i=0;i<works.length;i++){
     </div>
     <nav class="work-pagination" aria-label="Previous and next artwork">${neighbor(previous,'← Previous work')}${neighbor(next,'Next work →')}</nav>
   </div>
-</section>`,'gallery');
+</section>`,{active:'gallery',structuredData:artworkStructuredData(w,origin+route),images:[w]});
 }
 
 const sourceURL='https://www.dailypress.net/news/local-news/2019/09/play-mural-unveiled-in-gladstone/';
@@ -234,10 +301,46 @@ await page('/about/','About the artist','Meet Gladstone, Michigan artist Lorna B
     <p class="source-note">Community story: <a href="${sourceURL}">“‘Play’ mural unveiled in Gladstone,” <cite>Daily Press</cite>, September 7, 2019 ${arrow}</a>. The mural is a community project; it is not presented here as Lorna’s artwork.</p>
     <section class="contact" id="contact" aria-labelledby="contact-title"><p class="eyebrow">Say hello</p><h2 id="contact-title">Let’s talk about art.</h2><p>For questions about the work, get in touch by email.</p><a class="button" href="mailto:${esc(artist.email)}">Email Lorna ${arrow}</a><p class="contact-address">${esc(artist.email)}</p></section>
   </div>
-</section>`,'about');
+</section>`,{active:'about',structuredData:{'@type':'ProfilePage',mainEntity:artistPerson},images:[portrait]});
 
-await page('/404.html','Page not found','Return to Lorna Benson’s art collection.',`<section class="page-intro wrap"><p class="eyebrow">404 · Page not found</p><h1>Let’s find <em>the art.</em></h1><p class="intro">This page isn’t in the collection. The artwork is just a click away.</p><a class="button" href="/gallery/">Explore the collection ${arrow}</a></section>`,'',true);
-await fs.writeFile(`${out}/sitemap.xml`,`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${routes.map(r=>`<url><loc>${origin}${r}</loc></url>`).join('')}</urlset>`);
+await page('/404.html','Page not found','Return to Lorna Benson’s art collection.',`<section class="page-intro wrap"><p class="eyebrow">404 · Page not found</p><h1>Let’s find <em>the art.</em></h1><p class="intro">This page isn’t in the collection. The artwork is just a click away.</p><a class="button" href="/gallery/">Explore the collection ${arrow}</a></section>`,{noindex:true});
+await fs.writeFile(`${out}/sitemap.xml`,`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">${routes.map(({route,images})=>`<url><loc>${origin}${route}</loc><lastmod>${lastModified}</lastmod>${images.map(image=>`<image:image><image:loc>${esc(largestJpegURL(image))}</image:loc></image:image>`).join('')}</url>`).join('')}</urlset>`);
+
+// llms.txt (llmstxt.org): the same verified facts as the About page. Cloudflare serves .txt without a charset, so it must stay ASCII.
+const llmsWorkLine=w=>{
+  const facts=[capitalize(mediumWorkNouns[w.medium][0]),w.year!==undefined&&String(w.year),w.size!==undefined&&`${w.size.height} x ${w.size.width} ${sizeUnits[w.size.unit].label} (height x width)`,w.availability!==undefined&&`original: ${availabilityLabels[w.availability].toLowerCase()}`].filter(Boolean);
+  return `- [${w.title}](${origin}/work/${w.slug}/): ${facts.join(', ')}. ${w.alt}`;
+};
+const llmsText=`# Lorna Benson
+
+> Lorna Benson is an artist in Gladstone, Michigan, on Little Bay de Noc in Michigan's Upper Peninsula, and has made Gladstone her home for more than 50 years. This site shows ${works.length} of her works in ${mediaInWords}, most of them portraits of childhood.
+
+- Contact: ${artist.email} (email). The site does not describe commissions, prices or sales; for questions about the work, contact Lorna by email.
+- Look closely and her initials, LKB, are often tucked into a corner of a work.
+- Each work is shown straightened and trimmed from a photograph of the framed original; colors are not retouched. Every artwork page links that untouched photograph.
+- All artwork rights reserved by Lorna Benson.
+
+## About
+
+- [About the artist](${origin}/about/): Biography, the media she works in, and how to get in touch.
+- [Home](${origin}/): Selected works and an introduction to the artist.
+
+## Media
+
+- [All works](${origin}/gallery/): All ${works.length} works on the site.
+${media.map(m=>{const n=works.filter(w=>w.medium===m).length;return `- [${capitalize(m)}](${origin}/gallery/${mediumSlug(m)}/): ${capitalize(mediumWorkCount(m,n))}. ${mediumNotes[m]}`;}).join('\n')}
+
+## Works
+
+${works.map(llmsWorkLine).join('\n')}
+
+## Optional
+
+- [Daily Press: "'Play' mural unveiled in Gladstone" (September 7, 2019)](${sourceURL}): Reports that Lorna Benson spoke at the unveiling of Gladstone's "Play" mural, thanking the organizations, businesses and residents who supported the project and its artists. The mural is a community project; it is not presented as her artwork.
+- [Sitemap](${origin}/sitemap.xml): Every page, with its images.
+`;
+if (/[^\x00-\x7F]/.test(llmsText)) throw Error('llms.txt must be ASCII (Cloudflare serves .txt without a charset): '+llmsText.match(/[^\x00-\x7F]/)[0]);
+await fs.writeFile(`${out}/llms.txt`,llmsText);
 await fs.writeFile(`${out}/robots.txt`,`User-agent: *\nAllow: /\nSitemap: ${origin}/sitemap.xml\n`);
 await fs.writeFile(`${out}/favicon.svg`,'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><rect width="80" height="80" rx="16" fill="#243d32"/><text x="40" y="53" text-anchor="middle" font-family="Georgia,serif" font-size="38" fill="#f6f1e7">LB</text></svg>');
 await sharp(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><rect width="1200" height="630" fill="#f6f1e7"/><path d="M80 90H1120M80 540H1120" stroke="#243d32"/><text x="80" y="230" font-family="Georgia,serif" font-size="85" fill="#243d32">Lorna Benson</text><text x="80" y="350" font-family="Georgia,serif" font-size="48" fill="#243d32">Everyday moments. Lasting wonder.</text><text x="80" y="465" font-family="sans-serif" font-size="25" fill="#984c38">ARTIST · GLADSTONE, MICHIGAN</text></svg>')).png().toFile(`${out}/social.png`);

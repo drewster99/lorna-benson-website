@@ -115,6 +115,9 @@ em{font-style:italic;font-weight:400;color:var(--accent)}
 .detail-heading .eyebrow{margin-bottom:16px}
 .detail-meta{font-size:.82rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-top:18px}
 .detail-description{font-family:var(--serif);font-size:1.4rem;line-height:1.55;letter-spacing:-.01em;margin-top:22px}
+.detail-facts{display:flex;flex-wrap:wrap;gap:16px 48px;margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}
+.detail-facts dt{font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--muted)}
+.detail-facts dd{font-family:var(--serif);font-size:1.15rem;line-height:1.5;margin-top:6px}
 .original-bar{display:flex;justify-content:space-between;align-items:center;gap:32px;margin-top:48px;padding-block:32px;border-block:1px solid var(--line)}
 .original-bar h2{font-size:1.7rem}
 .original-bar p{font-size:.78rem;color:var(--muted);margin-top:10px}
