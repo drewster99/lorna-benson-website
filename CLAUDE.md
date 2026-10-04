@@ -15,3 +15,5 @@ Decisions made by Andrew (site owner). Follow them; change only with his explici
 - **Deploy order:** `npm run deploy` deploys the redirect Worker, then the site. Each `wrangler deploy` replaces its Worker’s whole custom-domain set and, outside an interactive terminal, silently takes over hostnames held by other Workers. Never list `www.lornabenson.com` in `wrangler.jsonc`. If Workers Builds is connected, its deploy command must stay `npx wrangler deploy` (site only).
 - **HSTS:** `Strict-Transport-Security: max-age=31536000` is set once, on `/*` in `src/_headers` (never repeat it in another rule; duplicates are comma-joined). No `includeSubDomains`, no preload, deliberately. Cloudflare dashboard HSTS stays off. The zone’s Always Use HTTPS must stay on, because HSTS cannot protect a first visit over plain HTTP.
 - **Public repo:** `drewster99/lorna-benson-website` is public (`__PUBLIC_REPO`).
+
+
