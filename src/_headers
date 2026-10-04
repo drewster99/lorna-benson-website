@@ -10,6 +10,3 @@
   ! Content-Security-Policy
   Content-Security-Policy: default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; script-src 'none'; frame-ancestors 'none'; object-src 'none'
   Cache-Control: public, max-age=3600
-
-/social.png
-  Cache-Control: public, max-age=3600

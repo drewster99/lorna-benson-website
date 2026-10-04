@@ -99,10 +99,43 @@ async function derive(slug, render, {width, height, alt, fingerprint}) {
 
 for (const w of works) {
   const {data, info} = await (await rectifyArtwork(w.source, w.artCorners)).raw().toBuffer({resolveWithObject:true});
-  Object.assign(w, await derive(w.slug, () => sharp(data,{raw:info}), {width:info.width, height:info.height, alt:w.alt, fingerprint:w.sha256+JSON.stringify(w.artCorners)}));
+  w.render = () => sharp(data,{raw:info});
+  Object.assign(w, await derive(w.slug, w.render, {width:info.width, height:info.height, alt:w.alt, fingerprint:w.sha256+JSON.stringify(w.artCorners)}));
   await fs.copyFile(w.source,`${out}/originals/${w.slug}.jpeg`);
 }
-const portrait = await derive('lorna-benson', () => sharp(artist.portrait.source).extract(crop), {width:crop.width, height:crop.height, alt:artist.portrait.alt, fingerprint:artist.portrait.sha256+JSON.stringify(crop)});
+const renderPortrait = () => sharp(artist.portrait.source).extract(crop);
+const portrait = await derive('lorna-benson', renderPortrait, {width:crop.width, height:crop.height, alt:artist.portrait.alt, fingerprint:artist.portrait.sha256+JSON.stringify(crop)});
+
+/*
+ * Share previews are 1200×630, the 1.91:1 large-card size that Facebook, LinkedIn and X display. Those platforms crop
+ * any other shape, so the whole work sits on its mat inside the card instead: nothing is cropped and nothing is enlarged.
+ */
+const share = {width:1200, height:630, jpegQuality:84, matPad:16, layoutVersion:1};
+const shareHash = hash(JSON.stringify({pipelineHash, share})).slice(0,10);
+const shareColors = {paper:'#f6f1e7', wall:'#e9e2d3', mat:'#fffdf8', ink:'#243d32', accent:'#984c38'};
+/** Composites a matted image into a box on a 1200×630 background and returns the og:image fields. */
+async function shareImage(name, {render, fingerprint, alt, background, text='', box}) {
+  const assetPath = `/assets/share-${name}-${hash(fingerprint+shareHash).slice(0,10)}.jpeg`;
+  const {data, info} = await render().resize({width:box.width-2*share.matPad, height:box.height-2*share.matPad, fit:'inside', withoutEnlargement:true}).toColourspace('srgb')
+    .extend({top:share.matPad, bottom:share.matPad, left:share.matPad, right:share.matPad, background:shareColors.mat}).png().toBuffer({resolveWithObject:true});
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${share.width}" height="${share.height}"><rect width="${share.width}" height="${share.height}" fill="${background}"/>${text}</svg>`;
+  await sharp(Buffer.from(svg)).composite([{input:data, left:box.left+Math.round((box.width-info.width)/2), top:box.top+Math.round((box.height-info.height)/2)}]).jpeg({quality:share.jpegQuality, mozjpeg:true}).toFile(out+assetPath);
+  inventory.push({slug:'share-'+name, width:share.width, format:'jpeg', bytes:(await fs.stat(out+assetPath)).size, path:out+assetPath});
+  return {url:origin+assetPath, width:share.width, height:share.height, alt};
+}
+const artworkShares = new Map();
+/** One share image per work, reused by its page and by any gallery it covers. */
+async function artworkShare(w) {
+  if (!artworkShares.has(w.slug)) artworkShares.set(w.slug, await shareImage(w.slug, {render:w.render, fingerprint:w.sha256+JSON.stringify(w.artCorners), alt:w.alt, background:shareColors.wall, box:{left:40, top:40, width:1120, height:550}}));
+  return artworkShares.get(w.slug);
+}
+/** A name card for Home and About: the site's wordmark and two lines of heading on the left, a matted image on the right. */
+async function nameCardShare(name, {render, fingerprint, imageAlt, eyebrow, lines}) {
+  const {ink, accent} = shareColors;
+  const text = `<path d="M72 92H560M72 538H560" stroke="${ink}" stroke-width="1.5"/><text x="72" y="168" font-family="sans-serif" font-size="19" letter-spacing="3" fill="${accent}">${esc(eyebrow.toUpperCase())}</text><text x="72" y="282" font-family="Georgia,serif" font-size="74" fill="${ink}">Lorna Benson</text>${lines.map((line,i)=>`<text x="72" y="${372+i*54}" font-family="Georgia,serif" font-size="40"${i===lines.length-1?' font-style="italic"':''} fill="${ink}">${esc(line)}</text>`).join('')}`;
+  const alt = `Lorna Benson. ${lines.join(' ')} ${imageAlt}`;
+  return shareImage(name, {render, fingerprint:fingerprint+text, alt, background:shareColors.paper, text, box:{left:612, top:44, width:548, height:542}});
+}
 
 // Each artwork's proportions drive the justified walls; CSP forbids inline styles, so they live in the stylesheet.
 const ratioRules = works.map(w=>`.ar-${w.slug}{--ar:${(w.width/w.height).toFixed(4)};--native-width:${w.width}px}`).join('\n');
@@ -139,8 +172,9 @@ const jsonLd=data=>`<script type="application/ld+json">${JSON.stringify({'@conte
 
 const routes=[];
 /** Writes one HTML page. `images` are the page's own images, listed for it in the image sitemap. */
-async function page(route,title,description,body,{active='',noindex=false,structuredData=null,images=[]}={}){
-  const html=`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(title)} | Lorna Benson</title><meta name="description" content="${esc(description)}"><meta name="theme-color" content="#f6f1e7">${noindex?'<meta name="robots" content="noindex">':`<link rel="canonical" href="${origin}${route}">`}<meta property="og:title" content="${esc(title)} | Lorna Benson"><meta property="og:description" content="${esc(description)}"><meta property="og:type" content="website"><meta property="og:url" content="${origin}${route}"><meta property="og:image" content="${origin}/social.png"><meta property="og:image:alt" content="Lorna Benson — Artist, Gladstone, Michigan"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="${cssPath}">${structuredData?jsonLd(structuredData):''}</head><body>${nav(active,route)}<main id="main">${body}</main>${footer}</body></html>`;
+async function page(route,title,description,body,{share,active='',noindex=false,structuredData=null,images=[]}){
+  if (!share?.url || !share.alt?.trim()) throw Error('Page needs a share image with alternative text: '+route);
+  const html=`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(title)} | Lorna Benson</title><meta name="description" content="${esc(description)}"><meta name="theme-color" content="#f6f1e7">${noindex?'<meta name="robots" content="noindex">':`<link rel="canonical" href="${origin}${route}">`}<meta property="og:title" content="${esc(title)} | Lorna Benson"><meta property="og:description" content="${esc(description)}"><meta property="og:type" content="website"><meta property="og:url" content="${origin}${route}"><meta property="og:image" content="${share.url}"><meta property="og:image:type" content="image/jpeg"><meta property="og:image:width" content="${share.width}"><meta property="og:image:height" content="${share.height}"><meta property="og:image:alt" content="${esc(share.alt)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="${share.url}"><meta name="twitter:image:alt" content="${esc(share.alt)}"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="${cssPath}">${structuredData?jsonLd(structuredData):''}</head><body>${nav(active,route)}<main id="main">${body}</main>${footer}</body></html>`;
   const dest=route==='/404.html'?out+route:out+route+'index.html';await fs.mkdir(path.dirname(dest),{recursive:true});await fs.writeFile(dest,html);if(!noindex)routes.push({route,images});
 }
 
@@ -154,6 +188,7 @@ const mediumNotes={
   'watercolor':'Loose, luminous washes: a water lily glowing above its pads.',
 };
 for (const m of media) if (!mediumCovers[m] || !mediumNotes[m]?.trim()) throw Error('Medium needs a cover and a note: '+m);
+const homeShare=await nameCardShare('home',{render:featured.render,fingerprint:featured.sha256+JSON.stringify(featured.artCorners),imageAlt:`Beside it, ${featured.title}: ${featured.alt}`,eyebrow:'Artist · Gladstone, Michigan',lines:['Everyday moments.','Lasting wonder.']});
 const homeSelection=[['blowing-out-candles','brothers','first-attempt'],['christmas-pjs','little-em','not-out'],['big-brother','gracie-with-smore','attitude']];
 const artistPerson={...personReference,jobTitle:'Artist',description:`Artist in Gladstone, Michigan, making children’s portraits and more in ${mediaInWords}.`,image:largestJpegURL(portrait),email:artist.email,address:{'@type':'PostalAddress',addressLocality:'Gladstone',addressRegion:'MI',addressCountry:'US'}};
 const portraitSizes='(max-width: 599px) min(calc(100vw - 54px), 286px), (max-width: 899px) 360px, (max-width: 1099px) 280px, 340px';
@@ -198,7 +233,7 @@ await page('/','Portraits of everyday wonder',`Children’s portraits and more i
       <a class="button" href="/about/">About Lorna ${arrow}</a>
     </div>
   </div>
-</section>`,{structuredData:artistPerson});
+</section>`,{share:homeShare,structuredData:artistPerson});
 
 /** Gallery meta description: names the count in words and the works themselves, so no page reads "Explore 1 watercolor work". */
 function galleryDescription(medium,list){
@@ -221,7 +256,7 @@ for (const medium of [null,...media]) {
   <h2 class="visually-hidden">Artworks</h2>
   ${wall(list,{eager:4})}
   <p class="photo-note">Each work is shown straightened and trimmed from a photograph of the framed original; colors are not retouched. Every work’s page links to that untouched photograph.</p>
-</section>`,{active:'gallery'});
+</section>`,{active:'gallery',share:await artworkShare(medium?mediumCovers[medium]:bySlug(heroSelection[0][0]))});
 }
 
 const detailSizes=w=>{const r=w.width/w.height;return `(max-width: 799px) calc(100vw - 72px), min(calc(100vw - 200px), ${Math.round(r*72)}vh, ${w.width}px)`;};
@@ -263,7 +298,7 @@ for(let i=0;i<works.length;i++){
     </div>
     <nav class="work-pagination" aria-label="Previous and next artwork">${neighbor(previous,'← Previous work')}${neighbor(next,'Next work →')}</nav>
   </div>
-</section>`,{active:'gallery',structuredData:artworkStructuredData(w,origin+route),images:[w]});
+</section>`,{active:'gallery',share:await artworkShare(w),structuredData:artworkStructuredData(w,origin+route),images:[w]});
 }
 
 const sourceURL='https://www.dailypress.net/news/local-news/2019/09/play-mural-unveiled-in-gladstone/';
@@ -301,9 +336,9 @@ await page('/about/','About the artist','Meet Gladstone, Michigan artist Lorna B
     <p class="source-note">Community story: <a href="${sourceURL}">“‘Play’ mural unveiled in Gladstone,” <cite>Daily Press</cite>, September 7, 2019 ${arrow}</a>. The mural is a community project; it is not presented here as Lorna’s artwork.</p>
     <section class="contact" id="contact" aria-labelledby="contact-title"><p class="eyebrow">Say hello</p><h2 id="contact-title">Let’s talk about art.</h2><p>For questions about the work, get in touch by email.</p><a class="button" href="mailto:${esc(artist.email)}">Email Lorna ${arrow}</a><p class="contact-address">${esc(artist.email)}</p></section>
   </div>
-</section>`,{active:'about',structuredData:{'@type':'ProfilePage',mainEntity:artistPerson},images:[portrait]});
+</section>`,{active:'about',share:await nameCardShare('about',{render:renderPortrait,fingerprint:artist.portrait.sha256+JSON.stringify(crop),imageAlt:`Beside it, her portrait: ${artist.portrait.alt}`,eyebrow:'About the artist',lines:['A sense of place.','An eye for people.']}),structuredData:{'@type':'ProfilePage',mainEntity:artistPerson},images:[portrait]});
 
-await page('/404.html','Page not found','Return to Lorna Benson’s art collection.',`<section class="page-intro wrap"><p class="eyebrow">404 · Page not found</p><h1>Let’s find <em>the art.</em></h1><p class="intro">This page isn’t in the collection. The artwork is just a click away.</p><a class="button" href="/gallery/">Explore the collection ${arrow}</a></section>`,{noindex:true});
+await page('/404.html','Page not found','Return to Lorna Benson’s art collection.',`<section class="page-intro wrap"><p class="eyebrow">404 · Page not found</p><h1>Let’s find <em>the art.</em></h1><p class="intro">This page isn’t in the collection. The artwork is just a click away.</p><a class="button" href="/gallery/">Explore the collection ${arrow}</a></section>`,{share:homeShare,noindex:true});
 await fs.writeFile(`${out}/sitemap.xml`,`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">${routes.map(({route,images})=>`<url><loc>${origin}${route}</loc><lastmod>${lastModified}</lastmod>${images.map(image=>`<image:image><image:loc>${esc(largestJpegURL(image))}</image:loc></image:image>`).join('')}</url>`).join('')}</urlset>`);
 
 // llms.txt (llmstxt.org): the same verified facts as the About page. Cloudflare serves .txt without a charset, so it must stay ASCII.
@@ -343,7 +378,6 @@ if (/[^\x00-\x7F]/.test(llmsText)) throw Error('llms.txt must be ASCII (Cloudfla
 await fs.writeFile(`${out}/llms.txt`,llmsText);
 await fs.writeFile(`${out}/robots.txt`,`User-agent: *\nAllow: /\nSitemap: ${origin}/sitemap.xml\n`);
 await fs.writeFile(`${out}/favicon.svg`,'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><rect width="80" height="80" rx="16" fill="#243d32"/><text x="40" y="53" text-anchor="middle" font-family="Georgia,serif" font-size="38" fill="#f6f1e7">LB</text></svg>');
-await sharp(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><rect width="1200" height="630" fill="#f6f1e7"/><path d="M80 90H1120M80 540H1120" stroke="#243d32"/><text x="80" y="230" font-family="Georgia,serif" font-size="85" fill="#243d32">Lorna Benson</text><text x="80" y="350" font-family="Georgia,serif" font-size="48" fill="#243d32">Everyday moments. Lasting wonder.</text><text x="80" y="465" font-family="sans-serif" font-size="25" fill="#984c38">ARTIST · GLADSTONE, MICHIGAN</text></svg>')).png().toFile(`${out}/social.png`);
 const iconPng=await sharp(`${out}/favicon.svg`).resize(32,32).png().toBuffer();
 const icoHeader=Buffer.alloc(22);icoHeader.writeUInt16LE(1,2);icoHeader.writeUInt16LE(1,4);icoHeader[6]=32;icoHeader[7]=32;icoHeader.writeUInt16LE(1,10);icoHeader.writeUInt16LE(32,12);icoHeader.writeUInt32LE(iconPng.length,14);icoHeader.writeUInt32LE(22,18);await fs.writeFile(`${out}/favicon.ico`,Buffer.concat([icoHeader,iconPng]));
 await fs.copyFile('src/_headers',`${out}/_headers`);
