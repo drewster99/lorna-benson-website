@@ -1,6 +1,6 @@
 # Lorna Benson — artist portfolio
 
-A warm, accessible, art-first static website for Lorna Benson in Gladstone, Michigan. No client-side JavaScript (the Content Security Policy blocks scripts), tracking, third-party fonts or framework; the only code that runs is a separate server-side Cloudflare Worker that redirects www to the apex domain; the site itself is served as static assets. Works published on the artist’s original **Kids’ Portraits** website keep their titles and media from it. **Water Lily** (watercolor) came from an unpublished upload on the old site; its title and medium are placeholders pending confirmation from the family.
+A warm, accessible, art-first static website for Lorna Benson in Gladstone, Michigan. No client-side JavaScript (the Content Security Policy blocks scripts), tracking, third-party fonts or framework; the only code that runs is a separate server-side Cloudflare Worker that redirects www to the apex domain; the site itself is served as static assets. Works published on the artist’s original **Kids’ Portraits** website keep their titles and media from it. **Water Lily** (watercolor) came from an unpublished upload on the old site; its title and medium are confirmed.
 
 ## Develop and build
 
@@ -56,7 +56,7 @@ The old site had **no About the Artist** section. Hometown and residence of more
 
 No verifiable additional awards, training or exhibition history was found in the regional search. Portrait subjects are not newly identified beyond legacy titles. The old public artist email (`content/artist.json`) is shown in the site footer and the About contact section; street addresses, phone, private biography and people-finder data are not published. A text-only sharing preview (no artwork) avoids amplifying a child’s portrait. Contact availability should be reviewed by Lorna if the old email changes.
 
-Preserved legacy `home.html`, `images.json`, `Home.webarchive`, `gallery/` and `out/` remain local and ignored. Audit, backups, CLI reviews and browser-test evidence are retained outside the repository in AgentSmith task evidence, never deployed. The artist photograph (`gallery/DSC_0030…`) was confirmed by family as Lorna and is published on Home and About. The uncaptioned watercolor (`gallery/IMG_3099…`) is published as “Water Lily” with a placeholder title and guessed medium (owner-approved). Unrelated template assets were not published. The 2016–2019 lornabenson.com (“Medieval Romances”) is not confirmed to be the same person and is not referenced.
+Preserved legacy `home.html`, `images.json`, `Home.webarchive`, `gallery/` and `out/` remain local and ignored. Audit, backups, CLI reviews and browser-test evidence are retained outside the repository in AgentSmith task evidence, never deployed. The artist photograph (`gallery/DSC_0030…`) was confirmed by family as Lorna and is published on Home and About. The uncaptioned watercolor (`gallery/IMG_3099…`) is published as “Water Lily” (watercolor); title and medium confirmed by the owner. Unrelated template assets were not published. The 2016–2019 lornabenson.com (“Medieval Romances”) is not confirmed to be the same person and is not referenced.
 
 ## Quality checks
 

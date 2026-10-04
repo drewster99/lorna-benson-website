@@ -8,7 +8,7 @@ Decisions made by Andrew (site owner). Follow them; change only with his explici
 - **Artist photo:** `photos/lorna-benson.jpeg` is Lorna (confirmed). Use it on Home and About.
 - **Biography uses known facts only:** Gladstone, Michigan, 50+ years; the 2019 Daily Press “Play” mural story; and what is visible in the works. Do not invent training, awards, quotes or history. The 2016–2019 “Medieval Romances” lornabenson.com is not confirmed to be her; do not reference it.
 - **Removed copy:** the About-page note “The artist’s hometown and length of residence were provided by her family. Artwork titles and media are retained from her original website.” must not return.
-- **Water Lily is provisional:** title “Water Lily” and medium “watercolor” are placeholders; Andrew will confirm them with the family.
+- **Water Lily is confirmed:** title “Water Lily” and medium “watercolor” are final (Andrew confirmed 2026-10-04).
 - **Email shown site-wide:** Lorna’s email (`content/artist.json`) appears in the footer and About contact.
 - **www redirects to apex:** handled by `worker/www-redirect.mjs` in the `lorna-benson-www-redirect` Worker (301 to `https://lornabenson.com`, path and query kept), not a dashboard rule. Never give `lorna-benson-website` a `main` script or `run_worker_first`; that bills every asset request.
 - **Deploy order:** `npm run deploy` deploys the redirect Worker, then the site. Each `wrangler deploy` replaces its Worker’s whole custom-domain set and, outside an interactive terminal, silently takes over hostnames held by other Workers. Never list `www.lornabenson.com` in `wrangler.jsonc`. If Workers Builds is connected, its deploy command must stay `npx wrangler deploy` (site only).
