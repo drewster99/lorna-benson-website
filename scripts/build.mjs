@@ -35,11 +35,16 @@ const isPoint = p => Array.isArray(p) && p.length===2 && p.every(Number.isFinite
  * Sitemap lastmod: the committer date of the newest commit touching any build input. Every page is rendered
  * from the same inputs (one manifest, one template), so one date is honest for all of them, and reading it from
  * git keeps builds reproducible (file mtimes are reset by every checkout). A shallow clone could report the
- * wrong commit, so it is refused rather than guessed at.
+ * wrong commit, so the full history is fetched first (Cloudflare Workers Builds clones shallowly); if that is
+ * impossible the build stops rather than guessing.
  */
 function committedContentDate(){
   const git=args=>execFileSync('git',args,{encoding:'utf8'}).trim();
-  if (git(['rev-parse','--is-shallow-repository'])!=='false') throw Error('Sitemap lastmod needs full git history; this clone is shallow (git fetch --unshallow).');
+  if (git(['rev-parse','--is-shallow-repository'])!=='false') {
+    console.log('Shallow clone: fetching full git history for sitemap lastmod.');
+    execFileSync('git',['fetch','--unshallow','--quiet'],{stdio:'inherit'});
+    if (git(['rev-parse','--is-shallow-repository'])!=='false') throw Error('Sitemap lastmod needs full git history, and git fetch --unshallow did not provide it.');
+  }
   const date=git(['log','-1','--format=%cI','--','content','artwork','photos','scripts','src']);
   if (!date) throw Error('Sitemap lastmod needs at least one commit touching the build inputs.');
   return date;
